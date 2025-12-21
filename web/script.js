@@ -230,10 +230,16 @@ function createPinElement(pin, index) {
 
         makePinDraggable(pinEl, index);
     } else {
-        pinEl.addEventListener('click', (e) => {
+        const handlePinClick = (e) => {
             e.stopPropagation();
             navigateToMap(pin.destino);
-        });
+        };
+        pinEl.addEventListener('click', handlePinClick);
+        pinEl.addEventListener('touchstart', (e) => {
+            // Only navigate if it's a quick tap, not a drag start elsewhere
+            // For now, simplicity: just tap to go.
+            handlePinClick(e);
+        }, { passive: true });
     }
 
     return pinEl;
@@ -377,24 +383,34 @@ function handleMapMouseUp(e) {
 }
 
 // Touch handlers for mobile
+let lastTouchX = 0;
+let lastTouchY = 0;
+
 function handleMapTouchStart(e) {
     if (state.isEditing) return;
     if (e.touches.length === 1) {
-        e.preventDefault();
         const touch = e.touches[0];
+        lastTouchX = touch.clientX;
+        lastTouchY = touch.clientY;
         state.isDragging = true;
-        state.dragStart = { x: touch.clientX - state.pan.x, y: touch.clientY - state.pan.y };
-        document.getElementById('mapContainer').classList.add('grabbing');
+        // No preventDefault here to allow potential taps on pins
     }
 }
 
 function handleMapTouchMove(e) {
     if (!state.isDragging) return;
     if (e.touches.length === 1) {
-        e.preventDefault();
+        e.preventDefault(); // Stop page scroll while panning
         const touch = e.touches[0];
-        state.pan.x = touch.clientX - state.dragStart.x;
-        state.pan.y = touch.clientY - state.dragStart.y;
+        const dx = touch.clientX - lastTouchX;
+        const dy = touch.clientY - lastTouchY;
+
+        state.pan.x += dx;
+        state.pan.y += dy;
+
+        lastTouchX = touch.clientX;
+        lastTouchY = touch.clientY;
+
         applyTransform();
     }
 }
