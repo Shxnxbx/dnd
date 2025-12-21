@@ -125,8 +125,9 @@ function setupMobileTabListeners() {
 function initMobileMap() {
     if (!window.initialGameData) return;
 
-    mState.zoom = 0.5; // Empezar un poco alejado para ver mapa
-    mState.pan = { x: 20, y: 80 }; // Posicion inicial razonable
+    // Iniciar con valores por defecto de PC para que las coordenadas encajen
+    mState.zoom = 1;
+    mState.pan = { x: 0, y: 0 };
 
     const params = new URLSearchParams(window.location.search);
     let mapId = params.get('map') || window.initialGameData.mapa_inicial;
@@ -142,7 +143,7 @@ function initMobileMap() {
     document.getElementById('m_breadcrumbs').textContent = mapData.nombre || 'Mundo';
 
     const canvas = document.getElementById('m_mapCanvas');
-    canvas.style.transform = `translate(${mState.pan.x}px, ${mState.pan.y}px) scale(${mState.zoom})`;
+    canvas.style.transform = `translate(0px, 0px) scale(1)`;
 
     renderMobilePins(mapData.pines);
     setupMobileMapInteraction();
@@ -155,14 +156,23 @@ function renderMobilePins(pines) {
 
     pines.forEach(pin => {
         const pinLink = document.createElement('a');
-        pinLink.className = 'mobile-pin';
-        pinLink.style.left = pin.x + '%';
-        pinLink.style.top = pin.y + '%';
+        pinLink.className = 'pin mobile-pin'; // Usamos estilos base de PC + ajustes de movil
+
+        // CORRECCIÓN: Multiplicar por 100 para convertir 0.5 a 50%
+        pinLink.style.left = (pin.x * 100) + '%';
+        pinLink.style.top = (pin.y * 100) + '%';
+
         pinLink.textContent = pin.nombre;
-        pinLink.href = `m_map.html?map=${pin.destino}`;
+
+        // Redirección real entre mapas
+        if (pin.destino) {
+            pinLink.href = `m_map.html?map=${pin.destino}`;
+        }
+
         layer.appendChild(pinLink);
     });
 }
+
 
 function setupMobileMapInteraction() {
     const container = document.getElementById('m_mapContainer');
