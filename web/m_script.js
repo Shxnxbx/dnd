@@ -264,7 +264,7 @@ function renderMobilePins(pines) {
         const size = pin.tamano || 1;
         pinLink.style.transform = `translate(-50%, -50%) scale(${size})`;
 
-        pinLink.textContent = pin.nombre;
+        pinLink.innerHTML = `<span class="pin-label">${pin.nombre}</span>`;
         if (pin.destino) {
             pinLink.href = `m_map.html?map=${pin.destino}`;
         }
