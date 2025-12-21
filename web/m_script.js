@@ -124,10 +124,21 @@ function setupMobileTabListeners() {
 // --- Map Logic ---
 function initMobileMap() {
     if (!window.initialGameData) return;
-    const mapId = window.initialGameData.mapa_inicial;
-    const mapData = window.initialGameData.mapas[mapId];
 
+    // Obtener mapa actual de la URL o usar el inicial
+    const params = new URLSearchParams(window.location.search);
+    let mapId = params.get('map') || window.initialGameData.mapa_inicial;
+
+    const mapData = window.initialGameData.mapas[mapId];
+    if (!mapData) {
+        console.error('Mapa no encontrado:', mapId);
+        return;
+    }
+
+    // Actualizar imagen y breadcrumbs
     document.getElementById('m_mapImg').src = mapData.imagen;
+    document.getElementById('m_breadcrumbs').textContent = mapData.nombre || 'Mundo';
+
     renderMobilePins(mapData.pines);
     setupMobileMapInteraction();
 }
@@ -138,18 +149,19 @@ function renderMobilePins(pines) {
     if (!pines) return;
 
     pines.forEach(pin => {
-        const pinEl = document.createElement('div');
-        pinEl.className = 'pin';
-        pinEl.style.left = pin.x + '%';
-        pinEl.style.top = pin.y + '%';
-        pinEl.textContent = pin.nombre;
-        pinEl.onclick = () => {
-            // Mobile navigation simple
-            showNotification(`Viajando a ${pin.nombre}...`, 2000);
-        };
-        layer.appendChild(pinEl);
+        const pinLink = document.createElement('a');
+        pinLink.className = 'pin mobile-pin';
+        pinLink.style.left = pin.x + '%';
+        pinLink.style.top = pin.y + '%';
+        pinLink.textContent = pin.nombre;
+
+        // Redirección real entre mapas
+        pinLink.href = `m_map.html?map=${pin.destino}`;
+
+        layer.appendChild(pinLink);
     });
 }
+
 
 function setupMobileMapInteraction() {
     const container = document.getElementById('m_mapContainer');

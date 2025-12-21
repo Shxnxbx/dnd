@@ -217,6 +217,43 @@
         margin-bottom: 25px !important;
     }
 
+    /* ============================================
+       MOBILE PIN FIXES
+       ============================================ */
+    .mobile-pin {
+        position: absolute !important;
+        transform: translate(-50%, -50%) !important;
+        /* Centrar el pin en las coordenadas */
+        text-decoration: none !important;
+        color: white !important;
+        background: rgba(21, 27, 43, 0.9) !important;
+        border: 1px solid var(--accent-gold) !important;
+        padding: 8px 12px !important;
+        border-radius: 4px !important;
+        font-size: 11px !important;
+        white-space: nowrap !important;
+        box-shadow: 0 0 15px rgba(0, 0, 0, 0.7) !important;
+        z-index: 100 !important;
+        pointer-events: auto !important;
+    }
+
+    .mobile-pin:active {
+        background: var(--accent-gold) !important;
+        color: black !important;
+    }
+
+    /* Back Button en HUD móvil */
+    .btn-back {
+        background: rgba(212, 175, 55, 0.1) !important;
+        border: 1px solid var(--accent-gold) !important;
+        padding: 5px 12px !important;
+        border-radius: 6px !important;
+        color: var(--accent-gold) !important;
+        text-decoration: none !important;
+        font-size: 13px !important;
+        pointer-events: auto !important;
+    }
+
     /* ZOOM buttons */
     .zoom-controls {
         position: fixed !important;
