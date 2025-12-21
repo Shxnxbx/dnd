@@ -3,6 +3,8 @@
  * View-only logic with real redirections
  */
 
+console.log('M_SCRIPT.JS LOADED');
+
 const mState = {
     zoom: 1,
     pan: { x: 0, y: 0 },
@@ -12,6 +14,7 @@ const mState = {
 
 // --- Character List ---
 function renderMobileCharacterList() {
+    console.log('--- Iniciando renderMobileCharacterList ---');
     const container = document.getElementById('m_characterList');
     if (!container) return;
 
