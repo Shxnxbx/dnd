@@ -75,8 +75,8 @@ function showWelcomeScreen() {
 // ============================================
 function setupEventListeners() {
     // Navigation
-    document.getElementById('backBtn').addEventListener('click', navigateBack);
-    document.getElementById('homeBtn').addEventListener('click', () => setView('landing'));
+    const btnHome = document.getElementById('btnHome');
+    if (btnHome) btnHome.addEventListener('click', () => setView('landing'));
 
     // Landing Page
     document.getElementById('cardWorld').addEventListener('click', () => {
@@ -104,22 +104,28 @@ function setupEventListeners() {
     });
 
     // Zoom controls
-    document.getElementById('zoomIn').addEventListener('click', () => adjustZoom(0.2));
-    document.getElementById('zoomOut').addEventListener('click', () => adjustZoom(-0.2));
-    document.getElementById('zoomReset').addEventListener('click', resetView);
+    const btnZoomIn = document.getElementById('btnZoomIn');
+    const btnZoomOut = document.getElementById('btnZoomOut');
+    if (btnZoomIn) btnZoomIn.addEventListener('click', () => adjustZoom(0.2));
+    if (btnZoomOut) btnZoomOut.addEventListener('click', () => adjustZoom(-0.2));
 
     // Editor controls
     document.getElementById('toggleEdit').addEventListener('click', toggleEditMode);
     document.getElementById('addMapBtn').addEventListener('click', showAddMapModal);
     document.getElementById('exportBtn').addEventListener('click', exportData);
 
-    // Map interaction
+    // Map interaction (Mouse)
     const container = document.getElementById('mapContainer');
     container.addEventListener('mousedown', handleMapMouseDown);
     container.addEventListener('mousemove', handleMapMouseMove);
     container.addEventListener('mouseup', handleMapMouseUp);
     container.addEventListener('wheel', handleMapWheel);
     container.addEventListener('contextmenu', handleRightClick);
+
+    // Map interaction (Touch for mobile)
+    container.addEventListener('touchstart', handleMapTouchStart, { passive: false });
+    container.addEventListener('touchmove', handleMapTouchMove, { passive: false });
+    container.addEventListener('touchend', handleMapTouchEnd);
 
     // Modal controls
     setupModalListeners();
@@ -166,10 +172,6 @@ function renderMap() {
         console.error('Failed to load image:', mapData.imagen);
         mapImage.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="800" height="600"%3E%3Crect width="800" height="600" fill="%23151b2b"/%3E%3Ctext x="400" y="300" text-anchor="middle" fill="%23d4af37" font-size="20"%3EImagen no encontrada%3C/text%3E%3C/svg%3E';
     };
-
-    // Update back button
-    const backBtn = document.getElementById('backBtn');
-    backBtn.style.display = state.history.length > 0 ? 'flex' : 'none';
 
     // Update breadcrumbs
     updateBreadcrumbs();
@@ -250,20 +252,40 @@ function makePinDraggable(pinEl, pinIndex) {
         pinEl.style.cursor = 'grabbing';
     });
 
+    // Touch Support for Pin Dragging
+    pinEl.addEventListener('touchstart', (e) => {
+        if (!state.isEditing) return;
+        e.stopPropagation();
+        isDragging = true;
+        const touch = e.touches[0];
+        startX = touch.clientX;
+        startY = touch.clientY;
+    }, { passive: false });
+
     document.addEventListener('mousemove', (e) => {
         if (!isDragging) return;
+        movePin(e.clientX, e.clientY);
+    });
 
+    document.addEventListener('touchmove', (e) => {
+        if (!isDragging) return;
+        e.preventDefault();
+        const touch = e.touches[0];
+        movePin(touch.clientX, touch.clientY);
+    }, { passive: false });
+
+    function movePin(clientX, clientY) {
         const container = document.getElementById('mapImage');
         const rect = container.getBoundingClientRect();
 
-        const x = (e.clientX - rect.left) / rect.width;
-        const y = (e.clientY - rect.top) / rect.height;
+        const x = (clientX - rect.left) / rect.width;
+        const y = (clientY - rect.top) / rect.height;
 
         pinEl.style.left = `${x * 100}%`;
         pinEl.style.top = `${y * 100}%`;
-    });
+    }
 
-    document.addEventListener('mouseup', () => {
+    const stopDragging = () => {
         if (isDragging) {
             isDragging = false;
             pinEl.style.cursor = 'move';
@@ -277,7 +299,10 @@ function makePinDraggable(pinEl, pinIndex) {
             state.data.mapas[state.currentMap].pines[pinIndex].x = x;
             state.data.mapas[state.currentMap].pines[pinIndex].y = y;
         }
-    });
+    };
+
+    document.addEventListener('mouseup', stopDragging);
+    document.addEventListener('touchend', stopDragging);
 }
 
 // ============================================
@@ -347,6 +372,34 @@ function handleMapMouseMove(e) {
 }
 
 function handleMapMouseUp(e) {
+    state.isDragging = false;
+    document.getElementById('mapContainer').classList.remove('grabbing');
+}
+
+// Touch handlers for mobile
+function handleMapTouchStart(e) {
+    if (state.isEditing) return;
+    if (e.touches.length === 1) {
+        e.preventDefault();
+        const touch = e.touches[0];
+        state.isDragging = true;
+        state.dragStart = { x: touch.clientX - state.pan.x, y: touch.clientY - state.pan.y };
+        document.getElementById('mapContainer').classList.add('grabbing');
+    }
+}
+
+function handleMapTouchMove(e) {
+    if (!state.isDragging) return;
+    if (e.touches.length === 1) {
+        e.preventDefault();
+        const touch = e.touches[0];
+        state.pan.x = touch.clientX - state.dragStart.x;
+        state.pan.y = touch.clientY - state.dragStart.y;
+        applyTransform();
+    }
+}
+
+function handleMapTouchEnd(e) {
     state.isDragging = false;
     document.getElementById('mapContainer').classList.remove('grabbing');
 }
@@ -623,6 +676,10 @@ function renderCharacterSheet(charId) {
     }
     statsContainer.innerHTML += portraitHTML;
 
+    // Stats Grid Wrapper
+    const statsGrid = document.createElement('div');
+    statsGrid.className = 'stat-grid';
+
     // Stats Rendering
     for (const [stat, value] of Object.entries(data.stats)) {
         const mod = Math.floor((value - 10) / 2);
@@ -632,7 +689,7 @@ function renderCharacterSheet(charId) {
             ? `<input type="number" class="sheet-input" value="${value}" data-stat="${stat}">`
             : `<span class="stat-value">${value}</span>`;
 
-        statsContainer.innerHTML += `
+        statsGrid.innerHTML += `
             <div class="stat-box">
                 <div class="stat-details">
                     <span class="stat-label">${stat}</span>
@@ -642,6 +699,7 @@ function renderCharacterSheet(charId) {
             </div>
         `;
     }
+    statsContainer.appendChild(statsGrid);
 
     // Header
     if (isCharacterEditing) {

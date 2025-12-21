@@ -17,19 +17,12 @@
 <body>
     <!-- HUD Overlay -->
     <div id="hud" class="hud" style="display: none;">
-        <div class="hud-top">
-            <button id="homeBtn" class="btn-back">
-                <span class="icon">🏠</span> Inicio
-            </button>
-            <button id="backBtn" class="btn-back" style="display: none;">
-                <span class="arrow">←</span> Volver
-            </button>
-            <div id="breadcrumbs" class="breadcrumbs"></div>
-        </div>
-        <div class="hud-controls">
-            <button id="zoomIn" class="btn-zoom" title="Acercar">+</button>
-            <button id="zoomReset" class="btn-zoom" title="Restablecer zoom">⊙</button>
-            <button id="zoomOut" class="btn-zoom" title="Alejar">−</button>
+        <button id="btnHome" class="hud-btn btn-home" title="Volver al Inicio">🏠</button>
+        <div id="breadcrumbs" class="breadcrumbs">Mundo</div>
+
+        <div class="zoom-controls" style="display:flex; gap:5px;">
+            <button id="btnZoomIn" class="hud-btn" title="Acercar">+</button>
+            <button id="btnZoomOut" class="hud-btn" title="Alejar">-</button>
         </div>
     </div>
 
