@@ -113,11 +113,26 @@
         width: 100vw !important;
         height: 100vh !important;
         z-index: 5 !important;
+        overflow: hidden !important;
+        display: none;
+        /* Controlado por JS, pero aseguramos base */
         background: #000 !important;
     }
 
     .map-canvas {
+        pointer-events: auto !important;
         touch-action: none !important;
+        width: 100% !important;
+        height: 100% !important;
+    }
+
+    .map-image {
+        width: 100% !important;
+        height: 100% !important;
+        object-fit: contain !important;
+        /* Igual que en PC */
+        max-width: none !important;
+        pointer-events: none;
     }
 
     /* --- New Multi-Page Mobile Layouts --- */

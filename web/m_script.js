@@ -125,6 +125,10 @@ function setupMobileTabListeners() {
 function initMobileMap() {
     if (!window.initialGameData) return;
 
+    // Reset zoom and pan for correct pin positioning on load
+    mState.zoom = 1;
+    mState.pan = { x: 0, y: 0 };
+
     // Obtener mapa actual de la URL o usar el inicial
     const params = new URLSearchParams(window.location.search);
     let mapId = params.get('map') || window.initialGameData.mapa_inicial;
@@ -136,8 +140,13 @@ function initMobileMap() {
     }
 
     // Actualizar imagen y breadcrumbs
-    document.getElementById('m_mapImg').src = mapData.imagen;
+    const mapImg = document.getElementById('m_mapImg');
+    mapImg.src = mapData.imagen;
     document.getElementById('m_breadcrumbs').textContent = mapData.nombre || 'Mundo';
+
+    // Reset transform before rendering pins
+    const canvas = document.getElementById('m_mapCanvas');
+    canvas.style.transform = `translate(0px, 0px) scale(1)`;
 
     renderMobilePins(mapData.pines);
     setupMobileMapInteraction();
