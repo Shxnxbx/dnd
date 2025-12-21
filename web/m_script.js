@@ -162,7 +162,10 @@ function renderMobilePins(pines) {
         pinLink.style.left = (pin.x * 100) + '%';
         pinLink.style.top = (pin.y * 100) + '%';
 
-        // APLICAR TAMAÑO (Igual que en PC)
+        // Capas inteligente: los pines de abajo tapan a los de arriba
+        pinLink.style.zIndex = Math.floor(pin.y * 1000);
+
+        // APLICAR TAMAÑO (Igual que en PC) + Centrado
         const size = pin.tamano || 1;
         pinLink.style.transform = `translate(-50%, -50%) scale(${size})`;
 

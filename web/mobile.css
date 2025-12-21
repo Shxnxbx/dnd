@@ -100,18 +100,37 @@
         pointer-events: none !important;
     }
 
+    /* PINES IDÉNTICOS A PC CON OPTIMIZACIÓN TÁCTIL */
     .mobile-pin {
         position: absolute !important;
         transform: translate(-50%, -50%) !important;
-        background: rgba(10, 14, 23, 0.9) !important;
+        padding: 4px 8px !important;
+        /* Más compacto para evitar solapamientos */
+        background: rgba(15, 20, 30, 0.95) !important;
         border: 1px solid var(--accent-gold) !important;
         color: white !important;
-        padding: 6px 10px !important;
         border-radius: 4px !important;
-        font-size: 11px !important;
+        font-size: 10px !important;
+        font-family: 'Inter', sans-serif !important;
         white-space: nowrap !important;
         pointer-events: auto !important;
-        box-shadow: 0 0 10px rgba(0, 0, 0, 0.8) !important;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.8) !important;
+        transition: transform 0.1s ease, z-index 0s !important;
+    }
+
+    /* Feedback al tocar: El pin crece y se pone al frente */
+    .mobile-pin:active {
+        transform: translate(-50%, -50%) scale(1.15) !important;
+        background: var(--accent-gold) !important;
+        color: black !important;
+        border-color: white !important;
+        z-index: 99999 !important;
+    }
+
+    /* Evitar que el texto sea seleccionable para que no moleste al arrastrar */
+    .mobile-pin {
+        user-select: none !important;
+        -webkit-user-drag: none !important;
     }
 
     /* FICHA PERSONAJE */
