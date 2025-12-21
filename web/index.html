@@ -16,8 +16,11 @@
 
 <body>
     <!-- HUD Overlay -->
-    <div id="hud" class="hud">
+    <div id="hud" class="hud" style="display: none;">
         <div class="hud-top">
+            <button id="homeBtn" class="btn-back">
+                <span class="icon">🏠</span> Inicio
+            </button>
             <button id="backBtn" class="btn-back" style="display: none;">
                 <span class="arrow">←</span> Volver
             </button>
@@ -30,11 +33,87 @@
         </div>
     </div>
 
+    <!-- Landing Page -->
+    <section id="landingPage" class="landing-page">
+        <h1 class="landing-title">Crónicas de Dungeons & Dragons</h1>
+        <div class="landing-cards">
+            <div class="card" id="cardWorld">
+                <div class="card-title">🗺️ Mundo</div>
+                <p>Explora el mapa del mundo, ciudades y mazmorras.</p>
+            </div>
+            <div class="card" id="cardCharacters">
+                <div class="card-title">👥 Personajes</div>
+                <p>Gestiona las hojas de personaje y estadísticas.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Character Sheets Section -->
+    <section id="characterSection" class="character-section" style="display: none;">
+        <h1 class="landing-title">Selecciona tu Personaje</h1>
+        <div class="landing-cards" id="characterListContainer">
+            <!-- Dynamic Content -->
+        </div>
+    </section>
+
+    <!-- Detailed Character Sheet (BG3 Style) -->
+    <div id="characterSheetContainer" class="character-sheet-container" style="display: none;">
+
+        <div class="sheet-controls-bar">
+            <button id="exportCharBtn" class="btn-sheet-icon"
+                title="Exportar personajes (Descargar archivo)">📥</button>
+            <button id="editCharBtn" class="btn-sheet-action">✎ Editar Hoja</button>
+            <button id="saveCharBtn" class="btn-sheet-action" style="display: none;">💾 Guardar Cambios</button>
+        </div>
+
+        <button id="closeSheetBtn" class="btn-close-sheet" title="Cerrar ficha">×</button>
+
+        <div class="sheet-layout">
+            <!-- Sidebar: Attributes -->
+            <div class="sheet-sidebar" id="sheetStats">
+                <!-- Injected via JS -->
+            </div>
+
+            <!-- Main Content -->
+            <div class="sheet-main">
+                <div class="sheet-header">
+                    <h1 id="sheetName">Nombre del Personaje</h1>
+                    <div class="sheet-meta">
+                        <span id="sheetRace">Raza</span> <span class="divider">✦</span>
+                        <span id="sheetClass">Clase</span> <span class="divider">✦</span>
+                        Nivel <span id="sheetLevel">1</span>
+                    </div>
+                </div>
+
+                <div class="sheet-vitals" id="sheetVitals">
+                    <!-- Injected via JS: HP, AC, Speed, Init -->
+                </div>
+
+                <div class="sheet-tabs-nav">
+                    <button class="tab-btn active" data-tab="features">Rasgos y Habilidades</button>
+                    <button class="tab-btn" data-tab="spells">Conjuros</button>
+                </div>
+
+                <div class="sheet-body">
+                    <div id="tabFeatures" class="tab-content active">
+                        <!-- Injected via JS -->
+                    </div>
+                    <div id="tabSpells" class="tab-content">
+                        <!-- Injected via JS -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
+
     <!-- Notification Banner -->
     <div id="notification" class="notification"></div>
 
     <!-- Editor Toolbar -->
-    <div id="editorToolbar" class="editor-toolbar">
+    <div id="editorToolbar" class="editor-toolbar" style="display: none;">
         <button id="toggleEdit" class="btn-editor">
             <span class="icon">✎</span> Modo Edición
         </button>
@@ -47,7 +126,7 @@
     </div>
 
     <!-- Map Container -->
-    <div id="mapContainer" class="map-container">
+    <div id="mapContainer" class="map-container" style="display: none;">
         <div id="mapCanvas" class="map-canvas">
             <img id="mapImage" class="map-image" alt="Mapa DnD">
             <div id="pinsLayer" class="pins-layer"></div>
@@ -79,6 +158,10 @@
                     <option value="">-- Seleccionar mapa --</option>
                 </select>
             </div>
+            <div class="form-group">
+                <label for="pinSize">Tamaño del Pin: <span id="pinSizeValue">1.0</span>x</label>
+                <input type="range" id="pinSize" min="0.5" max="2.0" step="0.1" value="1.0">
+            </div>
             <div class="modal-actions">
                 <button id="savePinBtn" class="btn-primary">Guardar</button>
                 <button id="cancelPinBtn" class="btn-secondary">Cancelar</button>
@@ -106,6 +189,8 @@
         </div>
     </div>
 
+    <script src="characters.js"></script>
+    <script src="data.js"></script>
     <script src="script.js"></script>
 </body>
 
