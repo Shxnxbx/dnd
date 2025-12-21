@@ -125,11 +125,9 @@ function setupMobileTabListeners() {
 function initMobileMap() {
     if (!window.initialGameData) return;
 
-    // Reset zoom and pan for correct pin positioning on load
-    mState.zoom = 1;
-    mState.pan = { x: 0, y: 0 };
+    mState.zoom = 0.5; // Empezar un poco alejado para ver mapa
+    mState.pan = { x: 20, y: 80 }; // Posicion inicial razonable
 
-    // Obtener mapa actual de la URL o usar el inicial
     const params = new URLSearchParams(window.location.search);
     let mapId = params.get('map') || window.initialGameData.mapa_inicial;
 
@@ -139,14 +137,12 @@ function initMobileMap() {
         return;
     }
 
-    // Actualizar imagen y breadcrumbs
     const mapImg = document.getElementById('m_mapImg');
     mapImg.src = mapData.imagen;
     document.getElementById('m_breadcrumbs').textContent = mapData.nombre || 'Mundo';
 
-    // Reset transform before rendering pins
     const canvas = document.getElementById('m_mapCanvas');
-    canvas.style.transform = `translate(0px, 0px) scale(1)`;
+    canvas.style.transform = `translate(${mState.pan.x}px, ${mState.pan.y}px) scale(${mState.zoom})`;
 
     renderMobilePins(mapData.pines);
     setupMobileMapInteraction();
@@ -159,22 +155,22 @@ function renderMobilePins(pines) {
 
     pines.forEach(pin => {
         const pinLink = document.createElement('a');
-        pinLink.className = 'pin mobile-pin';
+        pinLink.className = 'mobile-pin';
         pinLink.style.left = pin.x + '%';
         pinLink.style.top = pin.y + '%';
         pinLink.textContent = pin.nombre;
-
-        // Redirección real entre mapas
         pinLink.href = `m_map.html?map=${pin.destino}`;
-
         layer.appendChild(pinLink);
     });
 }
 
-
 function setupMobileMapInteraction() {
     const container = document.getElementById('m_mapContainer');
     const canvas = document.getElementById('m_mapCanvas');
+
+    const updateTransform = () => {
+        canvas.style.transform = `translate(${mState.pan.x}px, ${mState.pan.y}px) scale(${mState.zoom})`;
+    };
 
     container.addEventListener('touchstart', (e) => {
         if (e.touches.length === 1) {
@@ -193,8 +189,7 @@ function setupMobileMapInteraction() {
         mState.pan.x += dx;
         mState.pan.y += dy;
         mState.lastTouch = { x: touch.clientX, y: touch.clientY };
-
-        canvas.style.transform = `translate(${mState.pan.x}px, ${mState.pan.y}px) scale(${mState.zoom})`;
+        updateTransform();
     });
 
     container.addEventListener('touchend', () => {
@@ -202,12 +197,12 @@ function setupMobileMapInteraction() {
     });
 
     document.getElementById('m_zoomIn').onclick = () => {
-        mState.zoom += 0.2;
-        canvas.style.transform = `translate(${mState.pan.x}px, ${mState.pan.y}px) scale(${mState.zoom})`;
+        mState.zoom += 0.15;
+        updateTransform();
     };
     document.getElementById('m_zoomOut').onclick = () => {
-        mState.zoom = Math.max(0.4, mState.zoom - 0.2);
-        canvas.style.transform = `translate(${mState.pan.x}px, ${mState.pan.y}px) scale(${mState.zoom})`;
+        mState.zoom = Math.max(0.2, mState.zoom - 0.15);
+        updateTransform();
     };
 }
 
