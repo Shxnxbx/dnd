@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mapas DnD - Gestor Interactivo</title>
+    <meta name="description" content="Gestor interactivo de mapas para campañas de Dungeons & Dragons">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- HUD Overlay -->
+    <div id="hud" class="hud">
+        <div class="hud-top">
+            <button id="backBtn" class="btn-back" style="display: none;">
+                <span class="arrow">←</span> Volver
+            </button>
+            <div id="breadcrumbs" class="breadcrumbs"></div>
+        </div>
+        <div class="hud-controls">
+            <button id="zoomIn" class="btn-zoom" title="Acercar">+</button>
+            <button id="zoomReset" class="btn-zoom" title="Restablecer zoom">⊙</button>
+            <button id="zoomOut" class="btn-zoom" title="Alejar">−</button>
+        </div>
+    </div>
+
+    <!-- Editor Toolbar -->
+    <div id="editorToolbar" class="editor-toolbar">
+        <button id="toggleEdit" class="btn-editor">
+            <span class="icon">✎</span> Modo Edición
+        </button>
+        <button id="addMapBtn" class="btn-editor" style="display: none;">
+            <span class="icon">+</span> Añadir Mapa
+        </button>
+        <button id="exportBtn" class="btn-editor" style="display: none;">
+            <span class="icon">↓</span> Exportar Datos
+        </button>
+    </div>
+
+    <!-- Map Container -->
+    <div id="mapContainer" class="map-container">
+        <div id="mapCanvas" class="map-canvas">
+            <img id="mapImage" class="map-image" alt="Mapa DnD">
+            <div id="pinsLayer" class="pins-layer"></div>
+        </div>
+    </div>
+
+    <!-- Welcome Screen (shown when no data) -->
+    <div id="welcomeScreen" class="welcome-screen" style="display: none;">
+        <div class="welcome-content">
+            <h1>📍 Mapas DnD</h1>
+            <p>No hay datos cargados. Por favor, ejecuta el script de migración o carga un archivo data.json existente.</p>
+            <button id="loadDataBtn" class="btn-primary">Cargar Datos</button>
+            <input type="file" id="dataFileInput" accept=".json" style="display: none;">
+        </div>
+    </div>
+
+    <!-- Modal for Adding Pins -->
+    <div id="pinModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <h2>Nuevo Pin</h2>
+            <div class="form-group">
+                <label for="pinName">Nombre del lugar:</label>
+                <input type="text" id="pinName" placeholder="Ej: Taberna del Dragón">
+            </div>
+            <div class="form-group">
+                <label for="pinDestination">Mapa de destino:</label>
+                <select id="pinDestination">
+                    <option value="">-- Seleccionar mapa --</option>
+                </select>
+            </div>
+            <div class="modal-actions">
+                <button id="savePinBtn" class="btn-primary">Guardar</button>
+                <button id="cancelPinBtn" class="btn-secondary">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for Adding New Map -->
+    <div id="mapModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <h2>Añadir Nuevo Mapa</h2>
+            <div class="form-group">
+                <label for="mapId">ID del mapa:</label>
+                <input type="text" id="mapId" placeholder="Ej: taberna_interior">
+            </div>
+            <div class="form-group">
+                <label for="mapImagePath">Ruta de la imagen:</label>
+                <input type="text" id="mapImagePath" placeholder="assets/tu-mapa.jpg">
+                <small>Coloca la imagen en la carpeta 'assets' primero</small>
+            </div>
+            <div class="modal-actions">
+                <button id="saveMapBtn" class="btn-primary">Crear Mapa</button>
+                <button id="cancelMapBtn" class="btn-secondary">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
