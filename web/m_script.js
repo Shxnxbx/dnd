@@ -48,37 +48,66 @@ function renderMobileCharacterList() {
 
 // --- Character Sheet ---
 function renderMobileSheet(id) {
+    console.log('--- Iniciando renderMobileSheet para:', id, '---');
     if (!window.characterData) {
+        console.log('Esperando characterData...');
         setTimeout(() => renderMobileSheet(id), 100);
         return;
     }
 
     const data = window.characterData[id];
-    if (!data) return;
+    if (!data) {
+        console.error('ERROR: No se encontró data para ID:', id);
+        // Mostrar algo de error en el HTML si es posible
+        const nameEl = document.getElementById('m_sheetName');
+        if (nameEl) nameEl.textContent = 'Personaje no encontrado';
+        return;
+    }
 
-    document.getElementById('m_sheetName').textContent = data.nombre;
-    document.getElementById('m_sheetRace').textContent = data.raza;
-    document.getElementById('m_sheetClass').textContent = data.clase;
-    document.getElementById('m_sheetLevel').textContent = data.nivel;
+    console.log('Data encontrada:', data.nombre);
 
+    // Forzar visibilidad del contenedor
+    const mainContainer = document.getElementById('m_sheetContainer');
+    if (mainContainer) {
+        mainContainer.style.display = 'block';
+        mainContainer.style.opacity = '1';
+        mainContainer.style.visibility = 'visible';
+    }
+
+    // Name and Meta
+    const fields = {
+        'm_sheetName': data.nombre,
+        'm_sheetRace': data.raza,
+        'm_sheetClass': data.clase,
+        'm_sheetLevel': data.nivel
+    };
+
+    for (const [fieldId, value] of Object.entries(fields)) {
+        const el = document.getElementById(fieldId);
+        if (el) el.textContent = value;
+        else console.warn('Campo no encontrado en HTML:', fieldId);
+    }
+
+    // Image
     const img = document.getElementById('m_sheetImg');
     if (img) {
-        img.src = data.imagen;
-        // Quitar el scale dinámico que puede estar rompiendo la vista en móvil
+        img.src = data.imagen || '';
         img.style.transform = 'none';
+        console.log('Imagen cargada:', img.src);
     }
 
     // Stats
     const statsGrid = document.getElementById('m_statGrid');
-    if (statsGrid) {
+    if (statsGrid && data.stats) {
+        console.log('Renderizando stats...');
         statsGrid.innerHTML = '';
         for (const [stat, val] of Object.entries(data.stats)) {
             const mod = Math.floor((val - 10) / 2);
             statsGrid.innerHTML += `
                 <div class="stat-box">
-                    <span style="font-size:9px; color:var(--accent-gold); text-transform:uppercase; letter-spacing:1px;">${stat.substring(0, 3)}</span>
-                    <span style="font-size:20px; font-weight:bold; margin:2px 0;">${val}</span>
-                    <span style="font-size:11px; color:#aaa; font-weight:600;">${mod >= 0 ? '+' : ''}${mod}</span>
+                    <span class="stat-label" style="font-size:9px; color:var(--accent-gold); text-transform:uppercase;">${stat.substring(0, 3)}</span>
+                    <span class="stat-value" style="font-size:20px; font-weight:bold;">${val}</span>
+                    <span class="stat-mod" style="font-size:11px; color:#aaa;">${mod >= 0 ? '+' : ''}${mod}</span>
                 </div>
             `;
         }
@@ -86,13 +115,14 @@ function renderMobileSheet(id) {
 
     // Vitals
     const vitals = document.getElementById('m_sheetVitals');
-    if (vitals) {
+    if (vitals && data.resumen) {
+        console.log('Renderizando vitales...');
         vitals.innerHTML = '';
         const vitalKeys = ['HP', 'CA', 'Iniciativa'];
         vitalKeys.forEach(key => {
             const val = data.resumen[key] || '0';
             vitals.innerHTML += `
-                <div class="vital-box" style="flex:1; background:rgba(212,175,55,0.05); border:1px solid rgba(212,175,55,0.2); padding:10px; border-radius:10px; text-align:center;">
+                <div class="vital-box">
                     <div style="font-size:9px; color:#aaa; text-transform:uppercase;">${key}</div>
                     <div style="font-size:18px; font-weight:bold; color:var(--accent-gold);">${val}</div>
                 </div>
@@ -100,7 +130,8 @@ function renderMobileSheet(id) {
         });
     }
 
-    // Skills
+    // Skills & Tabs
+    console.log('Renderizando habilidades y pestañas...');
     let skillsHTML = '<div style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:20px; justify-content:center;">';
     if (data.habilidades) {
         data.habilidades.forEach(skill => {
@@ -112,24 +143,28 @@ function renderMobileSheet(id) {
     clearMobileSheet();
     renderMobileTabsContent(data, skillsHTML);
     setupMobileTabListeners();
+    console.log('--- Render finalizado con éxito ---');
 }
 
 function renderMobileTabsContent(data, skillsHTML) {
     // Features
     let featuresHTML = skillsHTML || '';
-    data.rasgos.forEach(feat => {
-        featuresHTML += `
-            <div class="feature-item">
-                <h3 style="margin:0 0 8px 0; color:var(--accent-gold); font-family:'Cinzel', serif; font-size:16px; border-bottom:1px solid rgba(212,175,55,0.2); padding-bottom:5px;">${feat.nombre}</h3>
-                <div style="font-size:13px; color:#ccc; line-height:1.5;">${feat.desc}</div>
-            </div>
-        `;
-    });
-    document.getElementById('m_tabFeatures').innerHTML = featuresHTML;
+    if (data.rasgos && Array.isArray(data.rasgos)) {
+        data.rasgos.forEach(feat => {
+            featuresHTML += `
+                <div class="feature-item">
+                    <h3 style="margin:0 0 8px 0; color:var(--accent-gold); font-family:'Cinzel', serif; font-size:16px; border-bottom:1px solid rgba(212,175,55,0.2); padding-bottom:5px;">${feat.nombre}</h3>
+                    <div style="font-size:13px; color:#ccc; line-height:1.5;">${feat.desc}</div>
+                </div>
+            `;
+        });
+    }
+    const featuresTab = document.getElementById('m_tabFeatures');
+    if (featuresTab) featuresTab.innerHTML = featuresHTML;
 
     // Spells
     let spellsHTML = '';
-    if (data.conjuros && data.conjuros.length > 0) {
+    if (data.conjuros && Array.isArray(data.conjuros) && data.conjuros.length > 0) {
         data.conjuros.forEach(spell => {
             spellsHTML += `
                 <div class="spell-item">
@@ -144,7 +179,8 @@ function renderMobileTabsContent(data, skillsHTML) {
     } else {
         spellsHTML = '<div style="text-align:center; padding:40px; color:#666; font-style:italic;">No hay conjuros registrados</div>';
     }
-    document.getElementById('m_tabSpells').innerHTML = spellsHTML;
+    const spellsTab = document.getElementById('m_tabSpells');
+    if (spellsTab) spellsTab.innerHTML = spellsHTML;
 }
 
 function clearMobileSheet() {

@@ -45,6 +45,12 @@
         min-height: 100vh !important;
         background: #0a0e17 !important;
         padding-top: 80px !important;
+        opacity: 1 !important;
+        /* Forzar visibilidad */
+        visibility: visible !important;
+        animation: none !important;
+        /* Evitar que se quede en opacity 0 por animaciones fallidas */
+        height: auto !important;
     }
 
     .sheet-layout {
@@ -156,6 +162,16 @@
         justify-content: center !important;
     }
 
+    .vital-box {
+        flex: 1 !important;
+        background: rgba(212, 175, 55, 0.05) !important;
+        border: 1px solid rgba(212, 175, 55, 0.2) !important;
+        padding: 12px 5px !important;
+        border-radius: 10px !important;
+        text-align: center !important;
+        min-width: 80px !important;
+    }
+
     .feature-item,
     .spell-item {
         background: rgba(30, 37, 54, 0.6) !important;
@@ -163,5 +179,14 @@
         border-radius: 4px 12px 12px 4px !important;
         padding: 18px !important;
         margin-bottom: 15px !important;
+    }
+
+    .tab-content {
+        display: none !important;
+    }
+
+    .tab-content.active {
+        display: block !important;
+        animation: fadeIn 0.3s ease !important;
     }
 }
