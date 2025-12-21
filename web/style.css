@@ -240,12 +240,15 @@ body::before {
 .breadcrumbs {
     background: var(--bg-glass);
     border: 1px solid var(--border-color);
-    padding: 8px 16px;
+    padding: 10px 20px;
     border-radius: 8px;
     backdrop-filter: blur(var(--blur-glass));
     color: var(--text-secondary);
-    font-size: 12px;
-    max-width: 400px;
+    font-size: 14px;
+    font-weight: 500;
+    font-family: var(--font-heading);
+    letter-spacing: 0.5px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
 }
 
 .hud-controls {
@@ -254,27 +257,62 @@ body::before {
     gap: 8px;
 }
 
+/* HUD Buttons (Shared Styles) */
+.hud-btn {
+    width: 45px;
+    height: 45px;
+    background: var(--bg-glass);
+    border: 2px solid var(--accent-gold);
+    color: var(--text-primary);
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    cursor: pointer;
+    backdrop-filter: blur(var(--blur-glass));
+    transition: all var(--transition-fast);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+
+.hud-btn:hover {
+    background: rgba(212, 175, 55, 0.2);
+    box-shadow: var(--shadow-glow);
+    transform: translateY(-2px);
+}
+
+.hud-btn:active {
+    transform: scale(0.95);
+}
+
+/* Home button specific */
+.btn-home {
+    width: auto;
+    padding: 0 15px;
+    gap: 8px;
+    font-size: 20px;
+}
+
+.btn-home::after {
+    content: 'INICIO';
+    font-family: var(--font-heading);
+    font-size: 14px;
+    font-weight: bold;
+    letter-spacing: 1px;
+}
+
 .btn-zoom {
-    width: 40px;
-    height: 40px;
+    width: 45px;
+    height: 45px;
     background: var(--bg-glass);
     border: 2px solid var(--accent-gold);
     color: var(--text-primary);
     font-size: 18px;
     font-weight: bold;
-    border-radius: 8px;
+    border-radius: 10px;
     cursor: pointer;
     backdrop-filter: blur(var(--blur-glass));
     transition: all var(--transition-fast);
-}
-
-.btn-zoom:hover {
-    background: rgba(212, 175, 55, 0.3);
-    box-shadow: var(--shadow-glow);
-}
-
-.btn-zoom:active {
-    transform: scale(0.95);
 }
 
 /* ============================================
@@ -750,20 +788,29 @@ body::before {
 
 .btn-close-sheet {
     position: absolute;
-    top: 20px;
-    right: 20px;
-    background: none;
-    border: none;
-    color: var(--text-secondary);
-    font-size: 32px;
+    top: 30px;
+    right: 40px;
+    width: 50px;
+    height: 50px;
+    background: var(--bg-glass);
+    border: 2px solid var(--accent-gold);
+    color: var(--accent-gold);
+    font-size: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
     cursor: pointer;
-    transition: all var(--transition-fast);
-    z-index: 5001;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 5005;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5), inset 0 0 10px rgba(212, 175, 55, 0.1);
 }
 
 .btn-close-sheet:hover {
-    color: var(--text-primary);
-    transform: scale(1.1);
+    background: var(--accent-gold);
+    color: var(--bg-primary);
+    transform: rotate(90deg) scale(1.1);
+    box-shadow: 0 0 25px rgba(212, 175, 55, 0.4);
 }
 
 .sheet-layout {
