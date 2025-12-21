@@ -1,5 +1,5 @@
 /* ============================================
-   MOBILE SPECIFIC OVERRIDES
+   MOBILE CLEAN VERSION - ONLY VIEW
    ============================================ */
 @media (max-width: 768px) {
 
@@ -14,61 +14,95 @@
         overflow-x: hidden !important;
         height: auto !important;
         min-height: 100vh !important;
-        background-attachment: fixed !important;
-    }
-
-    /* Fix para que nada se corte */
-    .landing-page,
-    .character-section {
-        width: 100% !important;
-        min-height: 100vh !important;
-        height: auto !important;
-        padding: 80px 10px 40px 10px !important;
-        display: flex !important;
-        flex-direction: column !important;
-        justify-content: flex-start !important;
-        align-items: center !important;
+        background: #0a0e17 !important;
         position: relative !important;
     }
 
-    .landing-title {
-        font-size: 24px !important;
-        margin-bottom: 30px !important;
-        width: 100% !important;
-        text-align: center !important;
+    /* Ocultar elementos de EDICIÓN */
+    #editorToolbar,
+    #toggleEdit,
+    #exportBtn,
+    #addMapBtn,
+    .sheet-controls-bar,
+    .portrait-edit-overlay,
+    .btn-add-item,
+    .btn-delete-item,
+    .pin-delete,
+    #editCharBtn,
+    #saveCharBtn,
+    #exportCharBtn {
+        display: none !important;
     }
 
-    .landing-cards {
-        width: 100% !important;
-        max-width: 400px !important;
-        gap: 20px !important;
-        margin: 0 !important;
-        display: flex !important;
-        flex-direction: column !important;
-    }
-
-    .card {
-        width: 100% !important;
-        height: auto !important;
-        min-height: 100px !important;
-        padding: 25px !important;
-    }
-
-    /* HUD */
+    /* HUD Móvil */
     .hud {
         position: fixed !important;
         top: 0 !important;
         left: 0 !important;
         width: 100% !important;
-        padding: 10px 15px !important;
-        background: rgba(10, 14, 23, 0.98) !important;
+        height: 60px !important;
+        padding: 10px !important;
         z-index: 5000 !important;
+        pointer-events: none !important;
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        background: rgba(10, 14, 23, 0.9) !important;
         border-bottom: 1px solid var(--accent-gold) !important;
-        pointer-events: none;
     }
 
     .hud>* {
-        pointer-events: auto;
+        pointer-events: auto !important;
+    }
+
+    .breadcrumbs {
+        font-size: 11px !important;
+        max-width: 150px !important;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    /* Secciones Principales */
+    .landing-page,
+    .character-section {
+        position: relative !important;
+        width: 100% !important;
+        height: auto !important;
+        min-height: 100vh !important;
+        padding: 80px 15px 40px 15px !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: flex-start !important;
+        overflow-y: visible !important;
+    }
+
+    .landing-title {
+        font-size: 22px !important;
+        text-align: center !important;
+        margin-bottom: 30px !important;
+    }
+
+    .landing-cards {
+        width: 100% !important;
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 20px !important;
+    }
+
+    #characterListContainer {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 15px !important;
+        width: 100% !important;
+        margin-bottom: 50px !important;
+    }
+
+    .card {
+        width: 100% !important;
+        min-height: 100px !important;
+        padding: 20px !important;
     }
 
     /* MAPA */
@@ -78,23 +112,32 @@
         left: 0 !important;
         width: 100vw !important;
         height: 100vh !important;
-        overflow: hidden !important;
+        z-index: 5 !important;
+        background: #000 !important;
     }
 
-    .map-image {
-        max-width: none !important;
-        /* Allow panning beyond screen */
-        width: auto !important;
-        height: auto !important;
+    .map-canvas {
+        touch-action: none !important;
     }
 
-    /* PERSONAJES GRID */
-    #characterListContainer {
-        display: grid !important;
-        grid-template-columns: repeat(2, 1fr) !important;
-        gap: 15px !important;
-        width: 100% !important;
-        max-width: 450px !important;
+    /* ZOOM buttons */
+    .zoom-controls {
+        position: fixed !important;
+        bottom: 20px !important;
+        right: 20px !important;
+        z-index: 6000 !important;
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 10px !important;
+    }
+
+    .hud-btn {
+        width: 50px !important;
+        height: 50px !important;
+        font-size: 24px !important;
+        background: rgba(20, 25, 40, 0.95) !important;
+        border: 2px solid var(--accent-gold) !important;
+        border-radius: 10px !important;
     }
 
     /* FICHA PERSONAJE */
@@ -102,41 +145,34 @@
         position: fixed !important;
         top: 0 !important;
         left: 0 !important;
-        width: 100% !important;
-        height: 100% !important;
-        background: #0a0e17 !important;
-        overflow-y: scroll !important;
-        overflow-x: hidden !important;
-        z-index: 9000 !important;
+        width: 100vw !important;
+        height: 100vh !important;
         padding: 0 !important;
+        background: #0a0e17 !important;
+        z-index: 10000 !important;
+        overflow-y: auto !important;
         -webkit-overflow-scrolling: touch !important;
     }
 
     .sheet-layout {
-        width: 100% !important;
-        height: auto !important;
         display: flex !important;
         flex-direction: column !important;
-        padding: 60px 15px 40px 15px !important;
+        padding: 60px 15px 100px 15px !important;
+        height: auto !important;
         gap: 20px !important;
     }
 
     .sheet-sidebar {
         width: 100% !important;
         border: none !important;
-        padding: 0 !important;
         border-bottom: 2px solid var(--border-color) !important;
-        padding-bottom: 20px !important;
+        padding-bottom: 25px !important;
     }
 
     .stat-grid {
         display: grid !important;
-        grid-template-columns: repeat(3, 1fr) !important;
-        gap: 8px !important;
-    }
-
-    .stat-box {
-        padding: 8px 4px !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 10px !important;
     }
 
     .sheet-main {
@@ -146,58 +182,35 @@
 
     .sheet-header h1 {
         font-size: 26px !important;
-    }
-
-    .sheet-vitals {
-        grid-template-columns: repeat(2, 1fr) !important;
-    }
-
-    /* Tabs buttons - fix overlapping */
-    .sheet-tabs-nav {
-        display: grid !important;
-        grid-template-columns: 1fr 1fr !important;
-        gap: 5px !important;
-        border: none !important;
-    }
-
-    .tab-btn {
-        background: rgba(255, 255, 255, 0.05) !important;
-        border: 1px solid rgba(212, 175, 55, 0.2) !important;
-        padding: 12px 5px !important;
-        font-size: 13px !important;
         text-align: center !important;
     }
 
-    .tab-btn.active {
-        background: rgba(212, 175, 55, 0.1) !important;
-        border-color: var(--accent-gold) !important;
+    .sheet-vitals {
+        grid-template-columns: 1fr 1fr !important;
+        gap: 10px !important;
     }
 
-    /* Action Buttons */
-    .sheet-controls-bar {
-        position: fixed !important;
-        bottom: 20px !important;
-        left: 20px !important;
-        z-index: 10002 !important;
+    .tab-btn {
+        padding: 12px 5px !important;
+        font-size: 13px !important;
+        flex: 1 1 45% !important;
+    }
+
+    .sheet-tabs-nav {
+        display: flex !important;
+        flex-wrap: wrap !important;
+        justify-content: center !important;
+        gap: 5px !important;
     }
 
     .btn-close-sheet {
         position: fixed !important;
         top: 10px !important;
         right: 15px !important;
-        z-index: 10002 !important;
-        background: rgba(0, 0, 0, 0.7) !important;
+        z-index: 10001 !important;
+        background: rgba(0, 0, 0, 0.8) !important;
         width: 44px !important;
         height: 44px !important;
         border-radius: 50% !important;
-        font-size: 24px !important;
-    }
-
-    /* Zoom */
-    .zoom-controls {
-        position: fixed !important;
-        bottom: 20px !important;
-        right: 20px !important;
-        z-index: 10001 !important;
     }
 }
