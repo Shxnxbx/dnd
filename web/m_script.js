@@ -19,12 +19,13 @@ function renderMobileCharacterList() {
         const charCard = document.createElement('a');
         charCard.href = `m_sheet.html?id=${char.id}`;
         charCard.className = 'card character-card-link';
+        charCard.style.textDecoration = 'none';
         charCard.innerHTML = `
-            <div class="card-img-wrapper" style="width:70px; height:70px; border-radius:50%; overflow:hidden; border:2px solid var(--accent-gold); margin-bottom:10px;">
+            <div class="card-img-wrapper" style="width:70px; height:70px; border-radius:50%; overflow:hidden; border:2px solid var(--accent-gold); margin: 0 auto 10px auto;">
                 <img src="${char.imagen}" style="width:100%; height:100%; object-fit:cover;">
             </div>
-            <div class="card-title">${char.nombre}</div>
-            <p>${char.raza} - ${char.clase}</p>
+            <div class="card-title" style="color:var(--accent-gold); text-align:center;">${char.nombre}</div>
+            <p style="color:#ccc; text-align:center; font-size:12px;">${char.raza} - ${char.clase}</p>
         `;
         container.appendChild(charCard);
     });
@@ -41,70 +42,73 @@ function renderMobileSheet(id) {
     document.getElementById('m_sheetLevel').textContent = data.nivel;
 
     const img = document.getElementById('m_sheetImg');
-    img.src = data.imagen;
-    img.style.transform = `scale(${data.imagenScale || 1.1})`;
+    if (img) {
+        img.src = data.imagen;
+        img.style.transform = `scale(${data.imagenScale || 1})`;
+    }
 
     // Stats
     const statsGrid = document.getElementById('m_statGrid');
-    statsGrid.innerHTML = '';
-    for (const [stat, val] of Object.entries(data.stats)) {
-        const mod = Math.floor((val - 10) / 2);
-        statsGrid.innerHTML += `
-            <div class="stat-box">
-                <span class="stat-label">${stat.toUpperCase()}</span>
-                <span class="stat-value">${val}</span>
-                <div class="stat-mod">${mod >= 0 ? '+' : ''}${mod}</div>
-            </div>
-        `;
+    if (statsGrid) {
+        statsGrid.innerHTML = '';
+        for (const [stat, val] of Object.entries(data.stats)) {
+            const mod = Math.floor((val - 10) / 2);
+            statsGrid.innerHTML += `
+                <div class="stat-box">
+                    <span style="font-size:10px; color:var(--accent-gold); text-transform:uppercase;">${stat}</span>
+                    <span style="font-size:18px; font-weight:bold;">${val}</span>
+                    <span style="font-size:12px; opacity:0.7;">${mod >= 0 ? '+' : ''}${mod}</span>
+                </div>
+            `;
+        }
     }
 
     // Vitals
     const vitals = document.getElementById('m_sheetVitals');
-    vitals.innerHTML = '';
-    for (const [key, val] of Object.entries(data.resumen)) {
-        vitals.innerHTML += `
-            <div class="vital-box">
-                <div class="vital-label">${key}</div>
-                <div class="vital-value">${val}</div>
-            </div>
-        `;
+    if (vitals) {
+        vitals.innerHTML = '';
+        for (const [key, val] of Object.entries(data.resumen)) {
+            vitals.innerHTML += `
+                <div class="vital-box" style="flex:1; background:rgba(255,255,255,0.05); padding:10px; border-radius:8px; text-align:center;">
+                    <div style="font-size:10px; opacity:0.8; text-transform:uppercase;">${key}</div>
+                    <div style="font-size:20px; font-weight:bold; color:var(--accent-gold);">${val}</div>
+                </div>
+            `;
+        }
     }
 
-    // Tabs
     renderMobileTabsContent(data);
     setupMobileTabListeners();
 }
 
 function renderMobileTabsContent(data) {
     // Features
-    let featuresHTML = '<div class="feature-grid">';
+    let featuresHTML = '';
     data.rasgos.forEach(feat => {
         featuresHTML += `
             <div class="feature-item">
-                <h3>${feat.nombre}</h3>
-                <div class="item-desc">${feat.desc}</div>
+                <h3 style="margin:0 0 5px 0; color:var(--accent-gold); font-size:16px;">${feat.nombre}</h3>
+                <div style="font-size:13px; color:#ccc; line-height:1.4;">${feat.desc}</div>
             </div>
         `;
     });
-    featuresHTML += '</div>';
     document.getElementById('m_tabFeatures').innerHTML = featuresHTML;
 
     // Spells
-    let spellsHTML = '<div class="feature-grid">';
+    let spellsHTML = '';
     if (data.conjuros && data.conjuros.length > 0) {
         data.conjuros.forEach(spell => {
             spellsHTML += `
                 <div class="spell-item">
-                    <h3>${spell.nombre}</h3>
-                    <div class="item-meta">Nivel ${spell.nivel}</div>
-                    <div class="item-desc">${spell.desc}</div>
+                    <h3 style="margin:0 0 2px 0; color:var(--accent-gold); font-size:16px;">${spell.nombre}</h3>
+                    <div style="font-size:11px; opacity:0.6; margin-bottom:5px;">Nivel ${spell.nivel}</div>
+                    <div style="font-size:13px; color:#ccc; line-height:1.4;">${spell.desc}</div>
                 </div>
             `;
         });
     } else {
-        spellsHTML += '<p style="text-align:center; padding:20px; color:var(--text-secondary)">Sin conjuros.</p>';
+        spellsHTML = '<p style="text-align:center; opacity:0.5; padding:20px;">Sin conjuros.</p>';
     }
-    spellsHTML += '</div>';
     document.getElementById('m_tabSpells').innerHTML = spellsHTML;
 }
 
@@ -115,55 +119,32 @@ function setupMobileTabListeners() {
             document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
 
             btn.classList.add('active');
-            const targetId = e.target.dataset.mTab === 'features' ? 'm_tabFeatures' : 'm_tabSpells';
+            const targetId = btn.dataset.mTab === 'features' ? 'm_tabFeatures' : 'm_tabSpells';
             document.getElementById(targetId).classList.add('active');
         });
     });
 }
 
-// --- Map Logic ---
+// --- Map Logic (IDÉNTICO A PC PERO CON TOUCH) ---
 function initMobileMap() {
     if (!window.initialGameData) return;
 
-    // Obtener mapa actual de la URL o usar el inicial
+    // Obtener mapa actual de la URL
     const params = new URLSearchParams(window.location.search);
     let mapId = params.get('map') || window.initialGameData.mapa_inicial;
 
     const mapData = window.initialGameData.mapas[mapId];
     if (!mapData) return;
 
-    const mapImg = document.getElementById('m_mapImg');
-    const canvas = document.getElementById('m_mapCanvas');
-    const updateBreadcrumbs = () => {
-        document.getElementById('m_breadcrumbs').textContent = mapData.nombre || 'Mundo';
-    };
+    document.getElementById('m_mapImg').src = mapData.imagen;
+    document.getElementById('m_breadcrumbs').textContent = mapData.nombre || 'Mundo';
 
-    updateBreadcrumbs();
+    // Resetear coordenadas para que coincidan con PC
+    mState.zoom = 1;
+    mState.pan = { x: 0, y: 0 };
+    updateTransform();
 
-    // Resetear cargando el mapa
-    mapImg.onload = () => {
-        const w = mapImg.naturalWidth;
-        const h = mapImg.naturalHeight;
-
-        // FIJAR EL CANVAS AL TAMAÑO REAL DE LA IMAGEN
-        // Así los porcentajes (px * 100%) caerán siempre en el mismo píxel
-        canvas.style.width = w + 'px';
-        canvas.style.height = h + 'px';
-
-        // Ajustar zoom inicial para que se vea el ancho del mapa
-        mState.zoom = window.innerWidth / w;
-        mState.pan = { x: 0, y: 0 };
-
-        updateTransform();
-        renderMobilePins(mapData.pines);
-    };
-
-    mapImg.src = mapData.imagen;
-    // Si la imagen ya estaba en cache
-    if (mapImg.complete) {
-        mapImg.onload();
-    }
-
+    renderMobilePins(mapData.pines);
     setupMobileMapInteraction();
 }
 
@@ -177,9 +158,13 @@ function renderMobilePins(pines) {
         const pinLink = document.createElement('a');
         pinLink.className = 'mobile-pin';
 
-        // COORDINADAS: Usar el porcentaje exacto sobre el canvas (que es el tamaño de la imagen)
+        // COORDINADAS: Exactamente como en PC (porcentaje del canvas)
         pinLink.style.left = (pin.x * 100) + '%';
         pinLink.style.top = (pin.y * 100) + '%';
+
+        // APLICAR TAMAÑO (Igual que en PC)
+        const size = pin.tamano || 1;
+        pinLink.style.transform = `translate(-50%, -50%) scale(${size})`;
 
         pinLink.textContent = pin.nombre;
         if (pin.destino) {
@@ -204,8 +189,8 @@ function setupMobileMapInteraction() {
         if (!mState.isDragging || e.touches.length !== 1) return;
         e.preventDefault();
         const touch = e.touches[0];
-        const dx = touch.clientX - mState.lastTouch.x;
-        const dy = touch.clientY - mState.lastTouch.y;
+        const dx = (touch.clientX - mState.lastTouch.x);
+        const dy = (touch.clientY - mState.lastTouch.y);
 
         mState.pan.x += dx;
         mState.pan.y += dy;
@@ -217,29 +202,20 @@ function setupMobileMapInteraction() {
         mState.isDragging = false;
     });
 
+    // Botones de Zoom
     document.getElementById('m_zoomIn').onclick = () => {
-        mState.zoom *= 1.25;
+        mState.zoom += 0.2;
         updateTransform();
     };
     document.getElementById('m_zoomOut').onclick = () => {
-        mState.zoom /= 1.25;
+        mState.zoom = Math.max(0.4, mState.zoom - 0.2);
         updateTransform();
     };
 }
 
-// Global update for map
 function updateTransform() {
     const canvas = document.getElementById('m_mapCanvas');
     if (canvas) {
         canvas.style.transform = `translate(${mState.pan.x}px, ${mState.pan.y}px) scale(${mState.zoom})`;
     }
-}
-
-
-function showNotification(msg, time) {
-    const n = document.createElement('div');
-    n.className = 'notification-banner';
-    n.textContent = msg;
-    document.body.appendChild(n);
-    setTimeout(() => n.remove(), time);
 }
