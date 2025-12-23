@@ -893,16 +893,47 @@ body::before {
 .stat-mod {
     background: #0a0e17;
     border-radius: 50%;
-    width: 36px;
-    height: 36px;
+    width: 32px;
+    height: 32px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 16px;
+    font-size: 14px;
     font-weight: bold;
     border: 2px solid rgba(212, 175, 55, 0.4);
     color: var(--accent-gold);
     box-shadow: 0 0 10px rgba(212, 175, 55, 0.1);
+}
+
+/* Skills/Saves under stats */
+.stat-sublist {
+    margin-top: 8px;
+    padding-top: 5px;
+    border-top: 1px solid rgba(212, 175, 55, 0.1);
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.sub-item {
+    font-size: 10px;
+    color: var(--text-secondary);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.sub-item.proficient {
+    color: var(--accent-gold);
+    font-weight: 600;
+}
+
+.prof-dot {
+    width: 6px;
+    height: 6px;
+    background: var(--accent-gold);
+    border-radius: 50%;
+    box-shadow: 0 0 5px var(--accent-gold);
 }
 
 /* Main Sheet Area */
@@ -935,47 +966,136 @@ body::before {
     opacity: 0.5;
 }
 
-/* Vitals Grid */
-.sheet-vitals {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-    gap: 20px;
-    margin-bottom: 40px;
+/* New Combat Main Row */
+.combat-main-row {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 25px;
+    flex-wrap: wrap;
 }
 
-.vital-box {
-    background: rgba(21, 27, 43, 0.8);
+.combat-pill {
+    background: linear-gradient(135deg, rgba(30, 37, 54, 0.9), rgba(15, 20, 31, 1));
     border: 1px solid var(--border-color);
-    padding: 20px 15px;
-    text-align: center;
+    padding: 10px 20px;
+    border-radius: 50px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: var(--shadow-elevated);
+    border-left: 3px solid var(--accent-gold);
+}
+
+.pill-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    letter-spacing: 1px;
+    font-family: var(--font-heading);
+}
+
+.pill-value {
+    font-size: 20px;
+    font-weight: bold;
+    color: var(--text-primary);
+    font-family: var(--font-heading);
+}
+
+.pill-icon {
+    font-size: 18px;
+}
+
+/* Quick Actions */
+.quick-actions-container {
+    margin-bottom: 30px;
+    background: rgba(255, 255, 255, 0.03);
+    padding: 15px;
+    border-radius: 8px;
+    border-top: 1px solid rgba(212, 175, 55, 0.2);
+}
+
+.section-label {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--accent-gold);
+    margin-bottom: 12px;
+    font-family: var(--font-heading);
+}
+
+.quick-actions-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 10px;
+}
+
+.action-card {
+    background: rgba(10, 14, 23, 0.6);
+    border: 1px solid rgba(212, 175, 55, 0.2);
+    padding: 10px 15px;
     border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    flex-direction: column;
     position: relative;
     overflow: hidden;
 }
 
-.vital-box::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 2px;
-    background: linear-gradient(90deg, transparent, var(--accent-gold), transparent);
+.action-card:hover {
+    background: rgba(212, 175, 55, 0.1);
+    border-color: var(--accent-gold);
+    transform: translateY(-2px);
 }
 
-.vital-label {
-    font-size: 12px;
-    color: var(--text-secondary);
-    text-transform: uppercase;
-    margin-bottom: 8px;
-    letter-spacing: 1px;
+.action-card.extra {
+    border-left: 3px solid var(--accent-magic);
 }
 
-.vital-value {
-    font-size: 28px;
-    font-family: var(--font-heading);
+.action-card.reaction {
+    border-left: 3px solid #ff4444;
+}
+
+.action-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;
+}
+
+.action-name {
+    font-size: 14px;
+    font-weight: 600;
     color: var(--text-primary);
-    font-weight: bold;
+}
+
+.action-type {
+    font-size: 9px;
+    color: var(--text-secondary);
+    background: rgba(0, 0, 0, 0.4);
+    padding: 2px 5px;
+    border-radius: 3px;
+    text-transform: uppercase;
+}
+
+.action-summary {
+    font-size: 12px;
+    color: var(--accent-gold);
+    font-weight: 500;
+}
+
+/* Tooltip / Detailed View */
+.item-desc.collapsible {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease-out;
+}
+
+.item-desc.expanded {
+    max-height: 500px;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 /* Tabs */
