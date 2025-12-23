@@ -14,6 +14,19 @@ const mState = {
     currentMapId: null
 };
 
+const skillMapping = {
+    "Fuerza": ["Atletismo"],
+    "Destreza": ["Acrobacias", "Juego de Manos", "Sigilo"],
+    "Constitución": [],
+    "Inteligencia": ["Arcanos", "Historia", "Investigación", "Naturaleza", "Religión"],
+    "Sabiduría": ["Manejo de Animales", "Perspicacia", "Medicina", "Percepción", "Supervivencia"],
+    "Carisma": ["Engaño", "Intimidación", "Persuación", "Interpretación"]
+};
+
+function getModifier(value) {
+    return Math.floor((value - 10) / 2);
+}
+
 function saveMHistory() {
     sessionStorage.setItem('m_map_history', JSON.stringify(mState.history));
 }
@@ -120,109 +133,273 @@ function renderMobileSheet(id) {
         console.log('Imagen cargada:', img.src);
     }
 
-    // Stats
+    // Stats with Skills and Saves (Mobile)
     const statsGrid = document.getElementById('m_statGrid');
     if (statsGrid && data.stats) {
-        console.log('Renderizando stats...');
         statsGrid.innerHTML = '';
-        for (const [stat, val] of Object.entries(data.stats)) {
-            const mod = Math.floor((val - 10) / 2);
+        for (const [stat, value] of Object.entries(data.stats)) {
+            const mod = getModifier(value);
+            const signedMod = mod >= 0 ? `+${mod}` : mod;
+
             statsGrid.innerHTML += `
                 <div class="stat-box">
-                    <span class="stat-label" style="font-size:9px; color:var(--accent-gold); text-transform:uppercase;">${stat.substring(0, 3)}</span>
-                    <span class="stat-value" style="font-size:20px; font-weight:bold;">${val}</span>
-                    <span class="stat-mod" style="font-size:11px; color:#aaa;">${mod >= 0 ? '+' : ''}${mod}</span>
+                    <div style="display:flex; justify-content:space-between; width:100%; align-items:center;">
+                        <span class="stat-label">${stat.substring(0, 3)}</span>
+                        <span class="stat-value">${value}</span>
+                        <div class="stat-mod" style="font-size:10px; border:1px solid rgba(212,175,55,0.3); border-radius:50%; width:20px; height:20px; display:flex; align-items:center; justify-content:center; color:var(--accent-gold);">${signedMod}</div>
+                    </div>
+                    
+                    <div class="stat-sublist">
+                        <div class="sub-item ${data.competencias_salvacion?.includes(stat) ? 'proficient' : ''}">
+                            <span>Salva</span>
+                            <span>${data.competencias_salvacion?.includes(stat) ? `+${mod + (data.resumen.Competencia || 2)}` : signedMod}</span>
+                        </div>
+                        ${(skillMapping[stat] || []).map(skill => {
+                const isProf = data.habilidades?.includes(skill);
+                const bonus = isProf ? mod + parseInt(data.resumen.Competencia || 2) : mod;
+                return `
+                            <div class="sub-item ${isProf ? 'proficient' : ''}">
+                                <span>${skill}</span>
+                                <span>${bonus >= 0 ? '+' : ''}${bonus}</span>
+                            </div>`;
+            }).join('')}
+                    </div>
                 </div>
             `;
         }
     }
 
-    // Vitals
-    const vitals = document.getElementById('m_sheetVitals');
-    if (vitals && data.resumen) {
-        console.log('Renderizando vitales...');
-        vitals.innerHTML = '';
-        const vitalKeys = ['HP', 'CA', 'Iniciativa'];
-        vitalKeys.forEach(key => {
-            const val = data.resumen[key] || '0';
-            vitals.innerHTML += `
-                <div class="vital-box">
-                    <div style="font-size:9px; color:#aaa; text-transform:uppercase;">${key}</div>
-                    <div style="font-size:18px; font-weight:bold; color:var(--accent-gold);">${val}</div>
+    // Combat Vitals (Enhanced Mobile)
+    const combatVitals = document.getElementById('m_sheetCombatVitals');
+    if (combatVitals && data.resumen) {
+        combatVitals.innerHTML = `
+            <div class="combat-pill" style="border-left-color: #ff4444">
+                <span class="pill-icon">❤️</span>
+                <div>
+                    <div class="pill-label">HP</div>
+                    <div class="pill-value">${data.resumen.HP}</div>
                 </div>
-            `;
-        });
+            </div>
+            <div class="combat-pill" style="border-left-color: #4488ff">
+                <span class="pill-icon">🛡️</span>
+                <div>
+                    <div class="pill-label">CA</div>
+                    <div class="pill-value">${data.resumen.CA}</div>
+                </div>
+            </div>
+            <div class="combat-pill" style="border-left-color: #44ff88">
+                <span class="pill-icon">⚡</span>
+                <div>
+                    <div class="pill-label">INIT</div>
+                    <div class="pill-value">${data.resumen.Iniciativa}</div>
+                </div>
+            </div>
+            <div class="combat-pill" style="border-left-color: #ffcc44">
+                <span class="pill-icon">🏃</span>
+                <div>
+                    <div class="pill-label">SPD</div>
+                    <div class="pill-value">${data.resumen.Velocidad}</div>
+                </div>
+            </div>
+        `;
     }
 
-    // Skills & Tabs
-    console.log('Renderizando habilidades y pestañas...');
-    let skillsHTML = '<div style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:20px; justify-content:center;">';
-    if (data.habilidades) {
-        data.habilidades.forEach(skill => {
-            skillsHTML += `<span style="background:rgba(212,175,55,0.1); border:1px solid var(--accent-gold); color:var(--accent-gold); padding:4px 10px; border-radius:4px; font-size:10px; font-weight:600; text-transform:uppercase;">${skill}</span>`;
-        });
-    }
-    skillsHTML += '</div>';
+    // Quick Actions
+    renderQuickActions(data);
 
-    clearMobileSheet();
-    renderMobileTabsContent(data, skillsHTML);
+    // Tab Navigation Management
+    updateMobileTabs(data);
+
+    // Tab Navigation Management
+    updateMobileTabs(data);
     setupMobileTabListeners();
     console.log('--- Render finalizado con éxito ---');
 }
 
-function renderMobileTabsContent(data, skillsHTML) {
-    // Features
-    let featuresHTML = skillsHTML || '';
-    if (data.rasgos && Array.isArray(data.rasgos)) {
-        data.rasgos.forEach(feat => {
-            featuresHTML += `
-                <div class="feature-item">
-                    <h3 style="margin:0 0 8px 0; color:var(--accent-gold); font-family:'Cinzel', serif; font-size:16px; border-bottom:1px solid rgba(212,175,55,0.2); padding-bottom:5px;">${feat.nombre}</h3>
-                    <div style="font-size:13px; color:#ccc; line-height:1.5;">${feat.desc}</div>
-                </div>
-            `;
-        });
-    }
-    const featuresTab = document.getElementById('m_tabFeatures');
-    if (featuresTab) featuresTab.innerHTML = featuresHTML;
+function renderQuickActions(data) {
+    const container = document.getElementById('m_quickActions');
+    if (!container) return;
+    container.innerHTML = '';
 
-    // Spells
-    let spellsHTML = '';
-    if (data.conjuros && Array.isArray(data.conjuros) && data.conjuros.length > 0) {
-        data.conjuros.forEach(spell => {
-            spellsHTML += `
-                <div class="spell-item">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; border-bottom:1px solid rgba(212,175,55,0.2); padding-bottom:5px;">
-                        <h3 style="margin:0; color:var(--accent-gold); font-family:'Cinzel', serif; font-size:16px;">${spell.nombre}</h3>
-                        <span style="font-size:10px; background:rgba(212,175,55,0.1); padding:2px 6px; border-radius:4px; color:var(--accent-gold);">NIV ${spell.nivel}</span>
-                    </div>
-                    <div style="font-size:13px; color:#ccc; line-height:1.5;">${spell.desc}</div>
-                </div>
-            `;
+    const quickItems = [];
+    if (data.conjuros) {
+        data.conjuros.forEach(s => {
+            if (s.nivel === "Truco" || s.nivel === 1 || s.nombre.includes("Eldritch")) {
+                quickItems.push({ ...s, category: 'Spell' });
+            }
         });
-    } else {
-        spellsHTML = '<div style="text-align:center; padding:40px; color:#666; font-style:italic;">No hay conjuros registrados</div>';
     }
-    const spellsTab = document.getElementById('m_tabSpells');
-    if (spellsTab) spellsTab.innerHTML = spellsHTML;
+    if (data.rasgos) {
+        data.rasgos.forEach(r => {
+            if (r.nombre.includes("🗡️") || r.nombre.includes("⚔️") || r.nombre.includes("Espada") || r.nombre.includes("Aura")) {
+                quickItems.push({ ...r, category: 'Trait' });
+            }
+        });
+    }
+
+    if (quickItems.length === 0) {
+        container.innerHTML = '<div style="color:#666; font-size:11px; text-align:center;">No hay acciones disponibles.</div>';
+        return;
+    }
+
+    quickItems.forEach(item => {
+        const isExtra = item.desc.toLowerCase().includes("acción adicional") || item.desc.toLowerCase().includes("bonus");
+        const isReaction = item.desc.toLowerCase().includes("reacción");
+        const card = document.createElement('div');
+        card.className = `action-card ${isExtra ? 'extra' : ''} ${isReaction ? 'reaction' : ''}`;
+        card.innerHTML = `
+            <div class="action-header">
+                <span class="action-name">${item.nombre}</span>
+                <span class="action-type">${isExtra ? 'Bonus' : isReaction ? 'Reac' : 'Acción'}</span>
+            </div>
+            <div class="action-summary">${item.desc.substring(0, 50)}...</div>
+        `;
+        container.appendChild(card);
+    });
+}
+
+function updateMobileTabs(data) {
+    const tabCombat = document.getElementById('m_tabCombat');
+    const tabFeatures = document.getElementById('m_tabFeatures');
+    const tabInventory = document.getElementById('m_tabInventory');
+    const tabSpells = document.getElementById('m_tabSpells');
+
+    // 1. Tab Combat
+    let combatHTML = '<div class="feature-grid">';
+    data.rasgos.forEach((trait, index) => {
+        if (trait.nombre.includes("🗡️") || trait.nombre.includes("⚔️") || trait.nombre.includes("Aura") || trait.nombre.includes("Combate")) {
+            combatHTML += renderMobileTraitItem(trait, index);
+        }
+    });
+    combatHTML += '</div>';
+    if (tabCombat) tabCombat.innerHTML = combatHTML;
+
+    // 2. Tab Features (Social/Narrative)
+    let narrativeHTML = '<div class="feature-grid">';
+    data.rasgos.forEach((trait, index) => {
+        if (!trait.nombre.includes("🗡️") && !trait.nombre.includes("⚔️") && !trait.nombre.includes("Combate")) {
+            narrativeHTML += renderMobileTraitItem(trait, index);
+        }
+    });
+    narrativeHTML += '</div>';
+    if (tabFeatures) tabFeatures.innerHTML = narrativeHTML;
+
+    // 3. Tab Inventory
+    renderMobileCategorizedInventory(data);
+
+    // 4. Tab Spells
+    renderMobileSpellsWithFilters(data);
+
+    setupMobileCollapsibleEvents();
+}
+
+function renderMobileTraitItem(trait, index) {
+    return `
+        <div class="feature-item" style="padding:15px !important;">
+            <div class="feature-header" style="cursor:pointer;">
+                <h3 style="margin:0; font-size:15px !important;">${trait.nombre}</h3>
+            </div>
+            <div class="item-desc collapsible">${trait.desc}</div>
+        </div>
+    `;
+}
+
+function renderMobileCategorizedInventory(data) {
+    const container = document.getElementById('m_tabInventory');
+    if (!container) return;
+
+    const categories = {
+        "Equipado": [],
+        "Objetos Mágicos": [],
+        "Consumibles": [],
+        "Mochila": []
+    };
+
+    if (data.inventario) {
+        data.inventario.forEach((item, index) => {
+            const desc = item.desc.toLowerCase();
+            if (desc.includes("arma") || desc.includes("armadura")) categories["Equipado"].push(item);
+            else if (desc.includes("mágico") || desc.includes("anillo")) categories["Objetos Mágicos"].push(item);
+            else if (desc.includes("poción") || desc.includes("pergamino")) categories["Consumibles"].push(item);
+            else categories["Mochila"].push(item);
+        });
+    }
+
+    let html = '';
+    for (const [catName, items] of Object.entries(categories)) {
+        html += `<h3 style="color:var(--accent-gold); font-family:'Cinzel', serif; font-size:14px; margin:15px 0 10px 0;">${catName}</h3>`;
+        if (items.length === 0) {
+            html += `<div style="color:#666; font-size:11px; margin-bottom:10px;">Vacío</div>`;
+        } else {
+            items.forEach(item => {
+                html += `
+                    <div class="feature-item" style="padding:12px !important; margin-bottom:10px !important;">
+                        <div class="feature-header" style="cursor:pointer;">
+                            <h3 style="margin:0; font-size:14px !important;">${item.nombre}</h3>
+                        </div>
+                        <div class="item-desc collapsible">${item.desc}</div>
+                    </div>
+                `;
+            });
+        }
+    }
+    container.innerHTML = html;
+}
+
+function renderMobileSpellsWithFilters(data) {
+    const container = document.getElementById('m_tabSpells');
+    if (!container) return;
+
+    if (!data.conjuros || data.conjuros.length === 0) {
+        container.innerHTML = '<div style="text-align:center; padding:30px; color:#666;">Sin conjuros</div>';
+        return;
+    }
+
+    let html = '<div class="feature-grid">';
+    data.conjuros.forEach(spell => {
+        html += `
+            <div class="spell-item" style="padding:15px !important;">
+                <div class="feature-header" style="cursor:pointer; display:flex; justify-content:space-between;">
+                    <h3 style="margin:0; font-size:15px !important;">${spell.nombre}</h3>
+                    <span style="font-size:10px; color:var(--accent-gold);">NIV ${spell.nivel}</span>
+                </div>
+                <div class="item-desc collapsible">${spell.desc}</div>
+            </div>
+        `;
+    });
+    html += '</div>';
+    container.innerHTML = html;
+}
+
+function setupMobileCollapsibleEvents() {
+    document.querySelectorAll('.feature-header').forEach(header => {
+        header.onclick = () => {
+            const desc = header.nextElementSibling;
+            if (desc && desc.classList.contains('collapsible')) {
+                desc.classList.toggle('expanded');
+            }
+        };
+    });
 }
 
 function clearMobileSheet() {
-    const features = document.getElementById('m_tabFeatures');
-    const spells = document.getElementById('m_tabSpells');
-    if (features) features.innerHTML = '';
-    if (spells) spells.innerHTML = '';
+    // No longer needed with new updateMobileTabs logic but kept for safety
 }
 
 function setupMobileTabListeners() {
     document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.onclick = (e) => {
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            const targetTab = btn.dataset.mTab;
+            const targetId = `m_tab${targetTab.charAt(0).toUpperCase() + targetTab.slice(1)}`;
 
+            // Toggle Buttons
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
-            const targetId = btn.dataset.mTab === 'features' ? 'm_tabFeatures' : 'm_tabSpells';
-            document.getElementById(targetId).classList.add('active');
+
+            // Toggle Content
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            const content = document.getElementById(targetId);
+            if (content) content.classList.add('active');
         };
     });
 }

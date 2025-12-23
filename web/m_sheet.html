@@ -44,16 +44,31 @@
                     </div>
                 </div>
 
-                <div id="m_sheetVitals" class="sheet-vitals">
-                    <!-- Dinámico -->
+                <div class="combat-main-row" id="m_sheetCombatVitals">
+                    <!-- Dinámico: HP, AC, Init, Speed pills -->
+                </div>
+
+                <div class="quick-actions-container">
+                    <h3 class="section-label">Acciones Frecuentes</h3>
+                    <div id="m_quickActions" class="quick-actions-grid">
+                        <!-- Dinámico: Ataques y habilidades rápidas -->
+                    </div>
+                </div>
+
+                <div id="m_sheetResources" class="sheet-vitals-secondary" style="display: none;">
+                    <!-- Dinámico: Recursos -->
                 </div>
 
                 <div class="sheet-tabs-nav">
-                    <button class="tab-btn active" data-m-tab="features">Habilidades</button>
-                    <button class="tab-btn" data-m-tab="spells">Conjuros</button>
+                    <button class="tab-btn active" data-m-tab="combat">Combate</button>
+                    <button class="tab-btn" data-m-tab="features">Social</button>
+                    <button class="tab-btn" data-m-tab="inventory">Equipo</button>
+                    <button class="tab-btn" data-m-tab="spells">Libro</button>
                 </div>
 
-                <div id="m_tabFeatures" class="tab-content active"></div>
+                <div id="m_tabCombat" class="tab-content active"></div>
+                <div id="m_tabFeatures" class="tab-content"></div>
+                <div id="m_tabInventory" class="tab-content"></div>
                 <div id="m_tabSpells" class="tab-content"></div>
             </div>
         </div>
