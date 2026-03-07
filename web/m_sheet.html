@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DnD Móvil - Hoja de Personaje</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Inter:wght@300;400;600&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="m_sheet.css">
+</head>
+
+<body class="mobile-body">
+    <div class="hud">
+        <a href="m_characters.html" class="btn-back">
+            <span class="arrow">←</span> Volver
+        </a>
+    </div>
+
+    <!-- Contenedor de la Ficha (BG3 Style Reutilizado) -->
+    <div id="m_sheetContainer" class="character-sheet-container"
+        style="display: block; position: relative; z-index: 9999;">
+        <div class="sheet-layout">
+            <!-- Sidebar: Stats (Visible ahora) -->
+            <div class="sheet-sidebar">
+                <div class="sheet-portrait-container">
+                    <img id="m_sheetImg" src="" alt="Retrato">
+                </div>
+                <!-- Stats Grid -->
+                <div id="m_statGrid" class="stat-grid">
+                    <!-- Dinámico -->
+                </div>
+            </div>
+
+            <!-- Main: Name, Vitals and Tabs -->
+            <div class="sheet-main">
+                <div class="sheet-header">
+                    <h1 id="m_sheetName">Nombre</h1>
+                    <div class="sheet-meta">
+                        <span id="m_sheetRace">Raza</span> •
+                        <span id="m_sheetClass">Clase</span> •
+                        Nivel <span id="m_sheetLevel">1</span>
+                    </div>
+                </div>
+
+                <div class="combat-main-row" id="m_sheetCombatVitals">
+                    <!-- Dinámico: HP, AC, Init, Speed pills -->
+                </div>
+
+                <div class="quick-actions-container">
+                    <h3 class="section-label">Acciones Frecuentes</h3>
+                    <div id="m_quickActions" class="quick-actions-grid">
+                        <!-- Dinámico: Ataques y habilidades rápidas -->
+                    </div>
+                </div>
+
+                <div id="m_sheetResources" class="sheet-vitals-secondary" style="display: none;">
+                    <!-- Dinámico: Recursos -->
+                </div>
+
+                <div class="tabs-slider-wrapper">
+                    <div class="sheet-tabs-nav">
+                        <button class="tab-btn active" data-m-tab="combat">Combate</button>
+                        <button class="tab-btn" data-m-tab="features">Social</button>
+                        <button class="tab-btn" data-m-tab="inventory">Equipo</button>
+                        <button class="tab-btn" data-m-tab="spells">Libro</button>
+                    </div>
+                </div>
+
+                <div id="m_tabCombat" class="tab-content active"></div>
+                <div id="m_tabFeatures" class="tab-content"></div>
+                <div id="m_tabInventory" class="tab-content"></div>
+                <div id="m_tabSpells" class="tab-content"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="characters.js"></script>
+    <script src="m_script.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const params = new URLSearchParams(window.location.search);
+            const charId = params.get('id');
+            if (charId) renderMobileSheet(charId);
+        });
+    </script>
+</body>
+
+</html>

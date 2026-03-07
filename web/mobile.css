@@ -1,0 +1,298 @@
+/* ============================================
+   MOBILE OVERRIDES
+   Base responsive is handled in style.css.
+   This file adds mobile-specific tweaks that
+   can't be done cleanly with media queries alone.
+   ============================================ */
+
+@media (max-width: 768px) {
+
+    /* ── Body ── */
+    html, body {
+        overflow-x: hidden;
+    }
+
+    body.view-map {
+        overflow: hidden;
+        height: 100vh;
+    }
+
+    /* Scrollable views: landing, characters */
+    body:not(.view-map) {
+        overflow-y: auto;
+        height: auto;
+    }
+
+    /* ── Hide desktop-only controls on mobile ── */
+    #editorToolbar,
+    #toggleEdit,
+    #exportBtn,
+    #addMapBtn,
+    .sheet-controls-bar,
+    .portrait-edit-overlay,
+    .btn-add-item,
+    .btn-delete-item,
+    .pin-delete,
+    #editCharBtn,
+    #saveCharBtn,
+    #exportCharBtn {
+        display: none;
+    }
+
+    /* ── HUD: fixed top bar ── */
+    .hud {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 64px;
+        background: rgba(10, 14, 23, 0.97);
+        border-bottom: 2px solid var(--accent-gold);
+        display: flex;
+        align-items: center;
+        padding: 0 16px;
+        z-index: 99999;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+        gap: 8px;
+        flex-direction: row;
+        flex-wrap: nowrap;
+        justify-content: space-between;
+    }
+
+    /* ── Map: offset below HUD ── */
+    body.view-map .map-container {
+        top: 64px;
+        height: calc(100vh - 64px);
+        width: 100%;
+    }
+
+    /* ── Landing ── */
+    .landing-page {
+        position: static;
+        padding-top: 84px;
+        height: auto;
+        min-height: 100vh;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-start;
+    }
+
+    /* ── Character list ── */
+    .character-section {
+        position: static;
+        width: 100%;
+        padding: 84px 16px 40px;
+        height: auto;
+        min-height: 100vh;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    #characterListContainer {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+        width: 100%;
+        max-width: 480px;
+    }
+
+    /* ── Character sheet ── */
+    .character-sheet-container {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        padding: 70px 14px 100px;
+        overflow-y: auto;
+        display: block;
+        background: rgba(10, 14, 23, 0.98);
+        z-index: 5000;
+        align-items: flex-start;
+    }
+
+    .sheet-layout {
+        width: 100%;
+        max-width: 100%;
+        height: auto;
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    /* Portrait: circle on mobile */
+    .sheet-portrait-container {
+        width: 140px;
+        height: 140px;
+        aspect-ratio: 1;
+        border-radius: 50%;
+        margin: 0 auto 16px;
+        border: 3px solid var(--accent-gold);
+        outline: none;
+    }
+
+    .sheet-portrait-img {
+        object-fit: cover;
+    }
+
+    /* Stats: 3 columns */
+    .stat-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+    }
+
+    .stat-box {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        padding: 10px 6px;
+        gap: 4px;
+    }
+
+    .stat-value {
+        font-size: 18px;
+    }
+
+    .stat-sublist {
+        display: none; /* Hide skill sub-list on mobile to save space */
+    }
+
+    /* HP bar */
+    .hp-display {
+        font-size: 26px;
+    }
+
+    /* Combat pills */
+    .combat-main-row {
+        gap: 8px;
+    }
+
+    .combat-pill {
+        padding: 8px 12px;
+        gap: 8px;
+        flex: 1;
+        min-width: 0;
+    }
+
+    .pill-value {
+        font-size: 15px;
+    }
+
+    .pill-label {
+        font-size: 9px;
+    }
+
+    /* Tabs */
+    .sheet-tabs-nav {
+        background: rgba(15, 20, 30, 0.9);
+        border: 1px solid var(--accent-gold);
+        border-radius: 10px;
+        overflow: hidden;
+        margin: 8px 0 16px;
+        gap: 0;
+        border-bottom: 1px solid var(--accent-gold);
+    }
+
+    .tab-btn {
+        flex: 1;
+        padding: 12px 8px;
+        font-size: 11px;
+        border-bottom: none;
+        background: transparent;
+        border-radius: 0;
+    }
+
+    .tab-btn.active {
+        background: rgba(212, 175, 55, 0.15);
+        color: var(--accent-gold);
+    }
+
+    .tab-btn.active::after {
+        display: none;
+    }
+
+    /* Features */
+    .feature-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .feature-item, .spell-item {
+        padding: 14px;
+        border-radius: 4px 10px 10px 4px;
+    }
+
+    .feature-item h3, .spell-item h3 {
+        font-size: 15px;
+    }
+
+    /* Quick actions */
+    .quick-actions-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    /* Close button */
+    .btn-close-sheet {
+        top: 70px;
+        right: 14px;
+        width: 40px;
+        height: 40px;
+        font-size: 22px;
+    }
+
+    /* Sheet header */
+    .sheet-header h1 {
+        font-size: clamp(22px, 6vw, 36px);
+    }
+
+    .sheet-meta {
+        font-size: 13px;
+    }
+
+    /* Dice roller: smaller on mobile */
+    .dice-toggle-btn {
+        width: 50px;
+        height: 50px;
+        font-size: 22px;
+    }
+
+    .dice-roller-widget {
+        bottom: 16px;
+        right: 16px;
+    }
+
+    .dice-panel {
+        min-width: 185px;
+    }
+
+    /* Zoom controls */
+    .zoom-controls {
+        position: fixed;
+        bottom: 20px;
+        right: 16px;
+    }
+
+    .hud-btn {
+        width: 52px;
+        height: 52px;
+        font-size: 22px;
+    }
+}
+
+/* Very small screens */
+@media (max-width: 380px) {
+    .stat-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    #characterListContainer {
+        grid-template-columns: 1fr;
+    }
+
+    .combat-pill .pill-label {
+        display: none;
+    }
+}
