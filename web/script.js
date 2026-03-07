@@ -1178,6 +1178,20 @@ function renderCharacterSheet(charId) {
     // Quick Actions
     renderQuickActions(data);
 
+    // Character-specific special buttons
+    const resourcesSection = document.getElementById('sheetResources');
+    if (charId === 'Vel') {
+        resourcesSection.style.display = 'flex';
+        resourcesSection.innerHTML = `
+            <button class="btn-demonic" title="Transformación demoníaca (próximamente)" disabled>
+                😈 Forma Demoníaca
+            </button>
+        `;
+    } else {
+        resourcesSection.style.display = 'none';
+        resourcesSection.innerHTML = '';
+    }
+
     // Tab Navigation Management
     updateTabs(data);
 
