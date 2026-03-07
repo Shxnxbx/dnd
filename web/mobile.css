@@ -167,24 +167,39 @@
         font-size: 26px;
     }
 
-    /* Combat pills */
+    /* Combat pills: 2x2 grid en mobile */
     .combat-main-row {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
         gap: 8px;
+    }
+
+    .combat-main-row .hp-bar-section {
+        grid-column: 1 / -1;
+        order: -1;
     }
 
     .combat-pill {
-        padding: 8px 12px;
-        gap: 8px;
-        flex: 1;
+        padding: 10px 12px;
+        gap: 6px;
         min-width: 0;
+        flex: none;
+    }
+
+    .pill-icon {
+        font-size: 18px;
+        flex-shrink: 0;
     }
 
     .pill-value {
-        font-size: 15px;
+        font-size: 16px;
     }
 
     .pill-label {
-        font-size: 9px;
+        font-size: 10px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
     /* Tabs */
