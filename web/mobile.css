@@ -136,6 +136,7 @@
 
     .sheet-portrait-img {
         object-fit: cover;
+        object-position: top center;
     }
 
     /* Stats: 3 columns */
