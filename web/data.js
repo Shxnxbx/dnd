@@ -41,6 +41,27 @@ window.initialGameData = {
                     "nombre": "Subasta",
                     "destino": "Casa Subasta",
                     "tamano": 1
+                },
+                {
+                    "x": 0.4992138534847579,
+                    "y": 0.4357173978835758,
+                    "nombre": "Girondinne",
+                    "destino": "girondin_dia",
+                    "tamano": 1
+                },
+                {
+                    "x": 0.5011792372668886,
+                    "y": 0.4860302591196354,
+                    "nombre": "Girondinne de noche",
+                    "destino": "girondin_noche",
+                    "tamano": 1
+                },
+                {
+                    "x": 0.4802148920100807,
+                    "y": 0.33176294687801006,
+                    "nombre": "Encuentro Rhinoinfernal",
+                    "destino": "vel_rino.jpeg",
+                    "tamano": 1
                 }
             ]
         },
@@ -262,6 +283,261 @@ window.initialGameData = {
         },
         "PactoVel": {
             "imagen": "assets/imagenes/PactoVel.jpg",
+            "pines": []
+        },
+        "girondin_dia": {
+            "imagen": "assets/imagenes/girondin_dia.jpeg",
+            "pines": [
+                {
+                    "x": 0.5098434307715229,
+                    "y": 0.692647690176422,
+                    "nombre": "Calle 1",
+                    "destino": "girondin1",
+                    "tamano": 1
+                },
+                {
+                    "x": 0.5103511623710271,
+                    "y": 0.7465075731065179,
+                    "nombre": "Calle 2",
+                    "destino": "girondin2",
+                    "tamano": 1
+                },
+                {
+                    "x": 0.6780660268904963,
+                    "y": 0.8396391197641727,
+                    "nombre": "Casa Jayce",
+                    "destino": "casajayce.jpeg",
+                    "tamano": 1
+                },
+                {
+                    "x": 0.6466194865129661,
+                    "y": 0.6495379703368436,
+                    "nombre": "Biblioteca de Magia",
+                    "destino": "Zero_Hablar_Maga.jpeg",
+                    "tamano": 1
+                },
+                {
+                    "x": 0.3740828032410371,
+                    "y": 0.74068683201166,
+                    "nombre": "Asthor y Violet rezan",
+                    "destino": "Asthor_violet_rezar.jpeg",
+                    "tamano": 1
+                }
+            ]
+        },
+        "girondin_noche": {
+            "imagen": "assets/imagenes/girondin_noche.jpeg",
+            "pines": [
+                {
+                    "x": 0.5214311533325139,
+                    "y": 0.6945576144731122,
+                    "nombre": "Calle 1",
+                    "destino": "girondin3",
+                    "tamano": 1
+                },
+                {
+                    "x": 0.5208333424968705,
+                    "y": 0.7508731143560955,
+                    "nombre": "Calle 2",
+                    "destino": "girondin4",
+                    "tamano": 1
+                },
+                {
+                    "x": 0.6832579737368094,
+                    "y": 0.8041873046299943,
+                    "nombre": "Casa Jayce",
+                    "destino": "casajaycenoche.jpeg",
+                    "tamano": 1
+                }
+            ]
+        },
+        "girondin1": {
+            "imagen": "assets/imagenes/girondin1.jpeg",
+            "pines": []
+        },
+        "girondin2": {
+            "imagen": "assets/imagenes/girondin2.jpeg",
+            "pines": [
+                {
+                    "x": 0.5457284928051372,
+                    "y": 0.8134276647480679,
+                    "nombre": "Asthor y Violet se conocen a fondo",
+                    "destino": "asthor_beso_violet.jpeg",
+                    "tamano": 1
+                }
+            ]
+        },
+        "girondin3": {
+            "imagen": "assets/imagenes/girondin3.jpeg",
+            "pines": [
+                {
+                    "x": 0.42911424890171507,
+                    "y": 0.6722933524349448,
+                    "nombre": "Pelea borrachos",
+                    "destino": "asesinatoborrachos.jpeg",
+                    "tamano": 1
+                }
+            ]
+        },
+        "girondin4": {
+            "imagen": "assets/imagenes/girondin4.jpeg",
+            "pines": [
+                {
+                    "x": 0.49986896475115816,
+                    "y": 0.3317811349678948,
+                    "nombre": "Yin y Tamariz",
+                    "destino": "Yin_Tamariz_Pelea",
+                    "tamano": 1
+                }
+            ]
+        },
+        "Yin_Tamariz_Pelea": {
+            "imagen": "assets/imagenes/Yin_Tamariz_Pelea.jpeg",
+            "pines": []
+        },
+        "casajaycenoche.jpeg": {
+            "imagen": "assets/imagenes/casajaycenoche.jpeg",
+            "pines": [
+                {
+                    "x": 0.40552116141295425,
+                    "y": 0.8250873155989141,
+                    "nombre": "Reunión Pyke",
+                    "destino": "todosypykefuera.jpeg",
+                    "tamano": 1
+                },
+                {
+                    "x": 0.45073374541126715,
+                    "y": 0.48020953745353195,
+                    "nombre": "Habitación Jayce",
+                    "destino": "jaycemurcielagos.jpeg",
+                    "tamano": 1
+                }
+            ]
+        },
+        "casajayce.jpeg": {
+            "imagen": "assets/imagenes/casajayce.jpeg",
+            "pines": []
+        },
+        "asesinatoborrachos.jpeg": {
+            "imagen": "assets/imagenes/asesinatoborrachos.jpeg",
+            "pines": []
+        },
+        "todosypykefuera.jpeg": {
+            "imagen": "assets/imagenes/todosypykefuera.jpeg",
+            "pines": []
+        },
+        "jaycemurcielagos.jpeg": {
+            "imagen": "assets/imagenes/jaycemurcielagos.jpeg",
+            "pines": [
+                {
+                    "x": 0.698162323603243,
+                    "y": 0.7099461651413059,
+                    "nombre": "Pelea",
+                    "destino": "todosvsjayce.jpeg",
+                    "tamano": 1
+                }
+            ]
+        },
+        "todosvsjayce.jpeg": {
+            "imagen": "assets/imagenes/todosvsjayce.jpeg",
+            "pines": [
+                {
+                    "x": 0.49397273843037126,
+                    "y": 0.5355063932815144,
+                    "nombre": "Muerte",
+                    "destino": "yinvsjayce.jpeg",
+                    "tamano": 1
+                },
+                {
+                    "x": 0.22471173644776835,
+                    "y": 0.13969731998648202,
+                    "nombre": "Demonios por la ciudad",
+                    "destino": "ciudad_demonios.jpeg",
+                    "tamano": 1
+                }
+            ]
+        },
+        "yinvsjayce.jpeg": {
+            "imagen": "assets/imagenes/yinvsjayce.jpeg",
+            "pines": []
+        },
+        "Zero_Hablar_Maga.jpeg": {
+            "imagen": "assets/imagenes/Zero_Hablar_Maga.jpeg",
+            "pines": []
+        },
+        "ciudad_demonios.jpeg": {
+            "imagen": "assets/imagenes/ciudad_demonios.jpeg",
+            "pines": [
+                {
+                    "x": 0.3406708540899112,
+                    "y": 0.7406686439217751,
+                    "nombre": "Zero salva a Carlitos",
+                    "destino": "zero_salva_carlitos.jpeg",
+                    "tamano": 1
+                },
+                {
+                    "x": 0.6007599484624011,
+                    "y": 0.7130384040976687,
+                    "nombre": "Yin compra niños",
+                    "destino": "yin_compra_ninos.jpeg",
+                    "tamano": 1
+                }
+            ]
+        },
+        "zero_salva_carlitos.jpeg": {
+            "imagen": "assets/imagenes/zero_salva_carlitos.jpeg",
+            "pines": [
+                {
+                    "x": 0.6269653987770096,
+                    "y": 0.4991268828683681,
+                    "nombre": "Salvado",
+                    "destino": "zero_abrazo_carlitos.jpeg",
+                    "tamano": 1
+                }
+            ]
+        },
+        "zero_abrazo_carlitos.jpeg": {
+            "imagen": "assets/imagenes/zero_abrazo_carlitos.jpeg",
+            "pines": [
+                {
+                    "x": 0.45662997173205405,
+                    "y": 0.6446449245209536,
+                    "nombre": "Carlitos",
+                    "destino": "carlitos.jpeg",
+                    "tamano": 1
+                }
+            ]
+        },
+        "carlitos.jpeg": {
+            "imagen": "assets/imagenes/carlitos.jpeg",
+            "pines": []
+        },
+        "yin_compra_ninos.jpeg": {
+            "imagen": "assets/imagenes/yin_compra_ninos.jpeg",
+            "pines": []
+        },
+        "Asthor_violet_rezar.jpeg": {
+            "imagen": "assets/imagenes/Asthor_violet_rezar.jpeg",
+            "pines": []
+        },
+        "asthor_beso_violet.jpeg": {
+            "imagen": "assets/imagenes/asthor_beso_violet.jpeg",
+            "pines": []
+        },
+        "vel_rino.jpeg": {
+            "imagen": "assets/imagenes/vel_rino.jpeg",
+            "pines": [
+                {
+                    "x": 0.4970519018344855,
+                    "y": 0.3993924656177656,
+                    "nombre": "Por lo visto es un cagon",
+                    "destino": "vel_rino_muerto.jpeg",
+                    "tamano": 1
+                }
+            ]
+        },
+        "vel_rino_muerto.jpeg": {
+            "imagen": "assets/imagenes/vel_rino_muerto.jpeg",
             "pines": []
         }
     }

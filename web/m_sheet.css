@@ -106,8 +106,41 @@ html {
 
 .stat-grid {
     display: grid !important;
-    grid-template-columns: repeat(3, 1fr) !important;
+    grid-template-columns: repeat(2, 1fr) !important;
     gap: 10px !important;
+    width: 100% !important;
+}
+
+/* Skills/Saves under stats (Mobile) */
+.stat-sublist {
+    margin-top: 8px;
+    padding-top: 5px;
+    border-top: 1px solid rgba(212, 175, 55, 0.1);
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    width: 100%;
+}
+
+.sub-item {
+    font-size: 9px;
+    color: #aaa;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.sub-item.proficient {
+    color: var(--accent-gold);
+    font-weight: 600;
+}
+
+.prof-dot {
+    width: 5px;
+    height: 5px;
+    background: var(--accent-gold);
+    border-radius: 50%;
+    box-shadow: 0 0 5px var(--accent-gold);
 }
 
 .stat-box {
@@ -120,26 +153,60 @@ html {
     align-items: center;
 }
 
+/* --- NOVO SLIDER FIX --- */
+.tabs-slider-wrapper {
+    width: calc(100% + 30px) !important;
+    /* Compensa el padding del padre para ser full width */
+    margin: 0 -15px 20px -15px !important;
+    overflow-x: scroll !important;
+    overflow-y: hidden !important;
+    -webkit-overflow-scrolling: touch !important;
+    position: relative !important;
+    background: #0f141f !important;
+    border-top: 1px solid rgba(212, 175, 55, 0.2) !important;
+    border-bottom: 1px solid rgba(212, 175, 55, 0.2) !important;
+}
+
+/* Ocultar scrollbar pero mantener funcionalidad */
+.tabs-slider-wrapper::-webkit-scrollbar {
+    display: none !important;
+}
+
 .sheet-tabs-nav {
     display: flex !important;
-    width: 100% !important;
-    background: rgba(15, 20, 30, 0.8) !important;
-    border: 1px solid var(--accent-gold) !important;
-    border-radius: 12px !important;
-    overflow: hidden;
+    width: max-content !important;
+    /* IMPORTANTE: Se estira tanto como necesiten los hijos */
+    min-width: 100% !important;
+    padding: 0 15px !important;
+    /* Espacio para que el primero y el ultimo no peguen */
+    list-style: none !important;
+    margin: 0 !important;
 }
 
 .tab-btn {
-    flex: 1 !important;
-    padding: 22px 10px !important;
-    /* Más alto */
-    font-size: 18px !important;
-    /* Texto más grande */
+    flex: 0 0 120px !important;
+    /* Cada boton mide 120px fijos */
+    padding: 18px 0 !important;
+    font-size: 14px !important;
     font-family: 'Cinzel', serif !important;
-    background: rgba(255, 255, 255, 0.05) !important;
+    background: transparent !important;
     color: #888 !important;
     border: none !important;
+    border-bottom: 2px solid transparent !important;
     transition: all 0.3s ease;
+    text-transform: uppercase !important;
+    letter-spacing: 1px !important;
+    text-align: center !important;
+}
+
+.tab-btn.active {
+    color: var(--accent-gold) !important;
+    background: rgba(212, 175, 55, 0.1) !important;
+    border-bottom-color: var(--accent-gold) !important;
+}
+
+.tab-btn:last-child {
+    border-right: none !important;
 }
 
 .tab-btn.active {
@@ -173,22 +240,118 @@ html {
     text-align: center;
 }
 
-.sheet-vitals {
-    display: flex !important;
-    gap: 10px !important;
-    margin: 20px 0 40px 0 !important;
-    width: 100% !important;
-    justify-content: center !important;
+/* Combat Pills (Mobile) */
+.combat-main-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    justify-content: center;
 }
 
-.vital-box {
-    flex: 1 !important;
-    background: rgba(212, 175, 55, 0.05) !important;
-    border: 1px solid rgba(212, 175, 55, 0.2) !important;
-    padding: 12px 5px !important;
-    border-radius: 10px !important;
-    text-align: center !important;
-    min-width: 80px !important;
+.combat-pill {
+    background: linear-gradient(135deg, rgba(30, 37, 54, 0.9), rgba(15, 20, 31, 1));
+    border: 1px solid rgba(212, 175, 55, 0.3);
+    padding: 8px 12px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 140px;
+    border-left: 3px solid var(--accent-gold);
+}
+
+.pill-label {
+    font-size: 8px;
+    text-transform: uppercase;
+    color: #aaa;
+    letter-spacing: 1px;
+}
+
+.pill-value {
+    font-size: 16px;
+    font-weight: bold;
+    color: white;
+}
+
+/* Quick Actions (Mobile) */
+.quick-actions-container {
+    margin-bottom: 25px;
+    background: rgba(255, 255, 255, 0.03);
+    padding: 12px;
+    border-radius: 8px;
+    border-top: 1px solid rgba(212, 175, 55, 0.2);
+}
+
+.section-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--accent-gold);
+    margin-bottom: 10px;
+    text-align: center;
+}
+
+.quick-actions-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+}
+
+.action-card {
+    background: rgba(10, 14, 23, 0.8);
+    border: 1px solid rgba(212, 175, 55, 0.2);
+    padding: 10px 15px;
+    border-radius: 6px;
+    display: flex;
+    flex-direction: column;
+}
+
+.action-card.extra {
+    border-left: 3px solid #66ccff;
+}
+
+.action-card.reaction {
+    border-left: 3px solid #ff4444;
+}
+
+.action-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2px;
+}
+
+.action-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--accent-gold);
+}
+
+.action-type {
+    font-size: 8px;
+    color: #888;
+    text-transform: uppercase;
+}
+
+.action-summary {
+    font-size: 11px;
+    color: #ccc;
+    line-height: 1.3;
+}
+
+/* Collapsible Desc */
+.item-desc.collapsible {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease-out;
+}
+
+.item-desc.expanded {
+    max-height: 1000px;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .feature-item,

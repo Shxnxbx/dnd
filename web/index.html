@@ -82,21 +82,40 @@
                     </div>
                 </div>
 
-                <div class="sheet-vitals" id="sheetVitals">
-                    <!-- Injected via JS: HP, AC, Speed, Init -->
+                <div class="combat-main-row" id="sheetCombatVitals">
+                    <!-- HP, AC, Init, Speed will be here with better design -->
+                </div>
+
+                <div class="quick-actions-container">
+                    <h3 class="section-label">Acciones Frecuentes</h3>
+                    <div id="quickActions" class="quick-actions-grid">
+                        <!-- Dynamic: Eldritch Blast, Sword Attack, etc. -->
+                    </div>
+                </div>
+
+                <div class="sheet-vitals-secondary" id="sheetResources" style="display: none;">
+                    <!-- Resources like Spell Slots, Rage, etc. -->
                 </div>
 
                 <div class="sheet-tabs-nav">
-                    <button class="tab-btn active" data-tab="features">Rasgos y Habilidades</button>
-                    <button class="tab-btn" data-tab="spells">Conjuros</button>
+                    <button class="tab-btn active" data-tab="combat">Combate</button>
+                    <button class="tab-btn" data-tab="features">Narrativa y Social</button>
+                    <button class="tab-btn" data-tab="inventory">Equipo e Inventario</button>
+                    <button class="tab-btn" data-tab="spells">Libro de Conjuros</button>
                 </div>
 
                 <div class="sheet-body">
-                    <div id="tabFeatures" class="tab-content active">
-                        <!-- Injected via JS -->
+                    <div id="tabCombat" class="tab-content active">
+                        <!-- Combat specific detailed traits/actions -->
+                    </div>
+                    <div id="tabFeatures" class="tab-content">
+                        <!-- Narrative/Social/Background -->
+                    </div>
+                    <div id="tabInventory" class="tab-content">
+                        <!-- Categorized Inventory -->
                     </div>
                     <div id="tabSpells" class="tab-content">
-                        <!-- Injected via JS -->
+                        <!-- Spells with filters -->
                     </div>
                 </div>
             </div>

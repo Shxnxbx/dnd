@@ -657,8 +657,247 @@ function updateTaskMd(action) {
 }
 
 // ============================================
-// Character Sheet Logic
+// Character Sheet Logic (Redesign)
 // ============================================
+const skillMapping = {
+    "Fuerza": ["Atletismo"],
+    "Destreza": ["Acrobacias", "Juego de Manos", "Sigilo"],
+    "Constitución": [],
+    "Inteligencia": ["Arcanos", "Historia", "Investigación", "Naturaleza", "Religión"],
+    "Sabiduría": ["Manejo de Animales", "Perspicacia", "Medicina", "Percepción", "Supervivencia"],
+    "Carisma": ["Engaño", "Intimidación", "Persuación", "Interpretación"]
+};
+
+function getModifier(value) {
+    return Math.floor((value - 10) / 2);
+}
+
+function renderQuickActions(data) {
+    const container = document.getElementById('quickActions');
+    if (!container) return;
+    container.innerHTML = '';
+
+    // We scan traits, spells and inventory for "quick" items
+    const quickItems = [];
+
+    // Heuristic: spells that are "Truco" or "Nivel 1" with damage/effect
+    if (data.conjuros) {
+        data.conjuros.forEach(s => {
+            if (s.nivel === "Truco" || s.nivel === 1 || s.nombre.includes("Eldritch")) {
+                quickItems.push({ ...s, type: 'Action', category: 'Spell' });
+            }
+        });
+    }
+
+    // Heuristic: traits that sound like weapons or major powers
+    if (data.rasgos) {
+        data.rasgos.forEach(r => {
+            if (r.nombre.includes("🗡️") || r.nombre.includes("⚔️") || r.nombre.includes("Espada") || r.nombre.includes("Aura")) {
+                quickItems.push({ ...r, type: 'Action', category: 'Trait' });
+            }
+        });
+    }
+
+    if (quickItems.length === 0) {
+        container.innerHTML = '<div style="color:var(--text-secondary); font-size:12px;">No hay acciones rápidas definidas.</div>';
+        return;
+    }
+
+    quickItems.forEach(item => {
+        const card = document.createElement('div');
+        const isExtra = item.desc.toLowerCase().includes("acción adicional") || item.desc.toLowerCase().includes("bonus");
+        const isReaction = item.desc.toLowerCase().includes("reacción");
+
+        card.className = `action-card ${isExtra ? 'extra' : ''} ${isReaction ? 'reaction' : ''}`;
+        card.innerHTML = `
+            <div class="action-header">
+                <span class="action-name">${item.nombre}</span>
+                <span class="action-type">${isExtra ? 'Bonus' : isReaction ? 'Reac' : 'Acción'}</span>
+            </div>
+            <div class="action-summary">${item.desc.substring(0, 60)}...</div>
+        `;
+        card.addEventListener('click', () => {
+            showNotification(`Usando: ${item.nombre}`, 2000);
+        });
+        container.appendChild(card);
+    });
+}
+
+function updateTabs(data) {
+    const tabCombat = document.getElementById('tabCombat');
+    const tabFeatures = document.getElementById('tabFeatures');
+    const tabInventory = document.getElementById('tabInventory');
+    const tabSpells = document.getElementById('tabSpells');
+
+    // 1. Tab Combat: Detailed actions and combat-related traits
+    let combatHTML = '<div class="feature-grid">';
+    data.rasgos.forEach((trait, index) => {
+        if (trait.nombre.includes("🗡️") || trait.nombre.includes("⚔️") || trait.nombre.includes("Aura") || trait.nombre.includes("Combate")) {
+            combatHTML += renderTraitItem(trait, index, 'combat');
+        }
+    });
+    combatHTML += '</div>';
+    tabCombat.innerHTML = combatHTML;
+
+    // 2. Tab Narrative: Social, background, and passive traits
+    let narrativeHTML = '<div class="feature-grid">';
+    data.rasgos.forEach((trait, index) => {
+        if (!trait.nombre.includes("🗡️") && !trait.nombre.includes("⚔️") && !trait.nombre.includes("Combate")) {
+            narrativeHTML += renderTraitItem(trait, index, 'features');
+        }
+    });
+    narrativeHTML += '</div>';
+    tabFeatures.innerHTML = narrativeHTML;
+
+    // 3. Tab Inventory: Categorized
+    let inventorySearchHTML = `
+        <div class="inventory-filters" style="margin-bottom:20px;">
+            <input type="text" id="inventorySearch" placeholder="Buscar en equipo..." class="sheet-input" style="width:100%">
+        </div>
+        <div id="inventoryResults">
+    `;
+    tabInventory.innerHTML = inventorySearchHTML + '</div>';
+    renderCategorizedInventory(data, "");
+
+    // Search logic for inventory
+    const invSearch = document.getElementById('inventorySearch');
+    if (invSearch) {
+        invSearch.addEventListener('input', (e) => {
+            renderCategorizedInventory(data, e.target.value.toLowerCase());
+        });
+    }
+
+    // 4. Tab Spells: With quick filters
+    renderSpellsWithFilters(data);
+
+    // Re-attach expand events
+    setupCollapsibleEvents();
+}
+
+function renderTraitItem(trait, index, tab) {
+    const isExpanded = false; // Initial state
+    return `
+        <div class="feature-item" data-index="${index}">
+            <div class="feature-header" style="display:flex; justify-content:space-between; cursor:pointer;">
+                <h3 style="margin:0">${trait.nombre}</h3>
+                ${isCharacterEditing ? `<button class="btn-delete-item" onclick="deleteFeature(${index})">×</button>` : ''}
+            </div>
+            <div class="item-desc collapsible">${trait.desc}</div>
+        </div>
+    `;
+}
+
+function renderCategorizedInventory(data, filter = "") {
+    const resultsContainer = document.getElementById('inventoryResults');
+    if (!resultsContainer) return;
+
+    const categories = {
+        "Equipado": [],
+        "Objetos Mágicos": [],
+        "Consumibles": [],
+        "Mochila": []
+    };
+
+    if (data.inventario) {
+        data.inventario.forEach((item, index) => {
+            if (filter && !item.nombre.toLowerCase().includes(filter) && !item.desc.toLowerCase().includes(filter)) return;
+
+            const desc = item.desc.toLowerCase();
+            if (desc.includes("arma") || desc.includes("armadura") || desc.includes("escudo")) categories["Equipado"].push({ item, index });
+            else if (desc.includes("mágico") || desc.includes("anillo") || desc.includes("capa")) categories["Objetos Mágicos"].push({ item, index });
+            else if (desc.includes("poción") || desc.includes("pergamino") || desc.includes("comida")) categories["Consumibles"].push({ item, index });
+            else categories["Mochila"].push({ item, index });
+        });
+    }
+
+    let html = '';
+    for (const [catName, items] of Object.entries(categories)) {
+        if (items.length === 0 && filter) continue;
+        html += `<h3 class="feature-section-title">${catName}</h3><div class="feature-grid">`;
+        if (items.length === 0) {
+            html += `<div style="color:var(--text-secondary); font-size:12px; padding:10px;">Nada en esta categoría.</div>`;
+        } else {
+            items.forEach(({ item, index }) => {
+                html += `
+                    <div class="feature-item">
+                        <div class="feature-header" style="display:flex; justify-content:space-between; cursor:pointer;">
+                            <h3 style="margin:0">${item.nombre}</h3>
+                            ${isCharacterEditing ? `<button class="btn-delete-item" onclick="deleteInventoryItem(${index})">×</button>` : ''}
+                        </div>
+                        <div class="item-desc collapsible expanded">${item.desc}</div>
+                    </div>
+                `;
+            });
+        }
+        html += '</div>';
+    }
+
+    if (isCharacterEditing) {
+        html += `<button class="btn-add-item" onclick="addInventoryItem()">+ Añadir Objeto</button>`;
+    }
+
+    resultsContainer.innerHTML = html;
+}
+
+function renderSpellsWithFilters(data) {
+    const container = document.getElementById('tabSpells');
+    if (!data.conjuros || data.conjuros.length === 0) {
+        container.innerHTML = '<div style="text-align: center; color: var(--text-secondary); padding: 40px;">Este personaje no posee conjuros.</div>';
+        return;
+    }
+
+    let html = `
+        <div class="spell-filters" style="margin-bottom:20px; display:flex; gap:10px;">
+            <input type="text" id="spellSearch" placeholder="Buscar conjuro..." class="sheet-input" style="flex:1">
+        </div>
+        <div class="feature-grid" id="spellsGrid">
+    `;
+
+    data.conjuros.forEach((spell, index) => {
+        const type = spell.desc.toLowerCase().includes("daño") ? "DAÑO" :
+            spell.desc.toLowerCase().includes("cur") ? "CURACIÓN" :
+                spell.desc.toLowerCase().includes("control") ? "CONTROL" : "UTILIDAD";
+
+        html += `
+            <div class="spell-item" data-name="${spell.nombre.toLowerCase()}">
+                <div class="feature-header" style="display:flex; justify-content:space-between; cursor:pointer;">
+                    <h3 style="margin:0">${spell.nombre}</h3>
+                    ${isCharacterEditing ? `<button class="btn-delete-item" onclick="deleteSpell(${index})">×</button>` : ''}
+                </div>
+                <div class="item-meta">${spell.nivel === "Truco" ? "Truco" : "Nivel " + spell.nivel} • ${type}</div>
+                <div class="item-desc collapsible">${spell.desc}</div>
+            </div>
+        `;
+    });
+
+    html += '</div>';
+    if (isCharacterEditing) {
+        html += `<button class="btn-add-item" onclick="addSpell()">+ Añadir Conjuro</button>`;
+    }
+    container.innerHTML = html;
+
+    // Search logic
+    const search = document.getElementById('spellSearch');
+    if (search) {
+        search.addEventListener('input', (e) => {
+            const val = e.target.value.toLowerCase();
+            document.querySelectorAll('#spellsGrid .spell-item').forEach(item => {
+                item.style.display = item.dataset.name.includes(val) ? 'block' : 'none';
+            });
+        });
+    }
+}
+
+function setupCollapsibleEvents() {
+    document.querySelectorAll('.feature-header').forEach(header => {
+        header.addEventListener('click', () => {
+            const desc = header.nextElementSibling;
+            if (desc && desc.classList.contains('collapsible')) {
+                desc.classList.toggle('expanded');
+            }
+        });
+    });
+}
 function renderCharacterSheet(charId) {
     if (!window.characterData || !window.characterData[charId]) {
         console.error('Data not found for character:', charId);
@@ -669,71 +908,65 @@ function renderCharacterSheet(charId) {
     currentCharacterId = charId;
     const data = window.characterData[charId];
 
-    // Toggle Buttons State
-    const editBtn = document.getElementById('editCharBtn');
-    const saveBtn = document.getElementById('saveCharBtn');
-    if (editBtn) editBtn.style.display = isCharacterEditing ? 'none' : 'flex';
-    if (saveBtn) saveBtn.style.display = isCharacterEditing ? 'flex' : 'none';
-
-    // Sidebar: Portrait + Stats
+    // Sidebar: Portrait + Stats (Enhanced)
     const statsContainer = document.getElementById('sheetStats');
     statsContainer.innerHTML = '';
 
-    // Portrait Rendering
+    // Portrait 
     const imgUrl = data.imagen || 'assets/imagenes/placeholder.jpg';
     const imgScale = data.imagenScale || 1;
-    let portraitHTML = '';
-
-    if (isCharacterEditing) {
-        portraitHTML = `
-            <div class="sheet-portrait-container">
-                <img id="portraitImg" src="${imgUrl}" class="sheet-portrait-img" style="transform: scale(${imgScale})" onerror="this.src='https://placehold.co/400x500/1e2536/d4af37?text=Sin+Imagen'">
+    let portraitHTML = `
+        <div class="sheet-portrait-container">
+            <img id="portraitImg" src="${imgUrl}" class="sheet-portrait-img" style="transform: scale(${imgScale})" onerror="this.src='https://placehold.co/400x500/1e2536/d4af37?text=Sin+Imagen'">
+            ${isCharacterEditing ? `
                 <div class="portrait-edit-overlay">
-                    <label style="font-size:10px; color:var(--accent-gold); margin-bottom:2px; display:block;">URL IMAGEN</label>
-                    <input class="sheet-input" id="editImage" value="${data.imagen || ''}" placeholder="URL..." style="margin-bottom:5px">
-                    
-                    <div style="display:flex; align-items:center; gap:5px;">
-                        <span style="font-size:10px; color:var(--accent-gold);">ZOOM</span>
-                        <input type="range" id="editImageScale" min="1.0" max="3.0" step="0.1" value="${imgScale}" 
-                               style="flex:1; accent-color:var(--accent-gold); height:4px;"
-                               oninput="document.getElementById('portraitImg').style.transform = 'scale('+this.value+')'">
-                    </div>
-                </div>
-            </div>
-        `;
-    } else {
-        portraitHTML = `
-            <div class="sheet-portrait-container">
-                <img src="${imgUrl}" class="sheet-portrait-img" style="transform: scale(${imgScale})" onerror="this.src='https://placehold.co/400x500/1e2536/d4af37?text=Sin+Imagen'">
-            </div>
-        `;
-    }
+                    <input class="sheet-input" id="editImage" value="${data.imagen || ''}" placeholder="URL Imagen...">
+                    <input type="range" id="editImageScale" min="1.0" max="3.0" step="0.1" value="${imgScale}">
+                </div>` : ''}
+        </div>
+    `;
     statsContainer.innerHTML += portraitHTML;
 
-    // Stats Grid Wrapper
+    // Attributes with Skills and Saves
     const statsGrid = document.createElement('div');
     statsGrid.className = 'stat-grid';
 
-    // Stats Rendering
     for (const [stat, value] of Object.entries(data.stats)) {
-        const mod = Math.floor((value - 10) / 2);
+        const mod = getModifier(value);
         const signedMod = mod >= 0 ? `+${mod}` : mod;
 
-        let valueContent = isCharacterEditing
-            ? `<input type="number" class="sheet-input" value="${value}" data-stat="${stat}">`
-            : `<span class="stat-value">${value}</span>`;
-
-        statsGrid.innerHTML += `
+        let statHTML = `
             <div class="stat-box">
                 <div class="stat-details">
                     <span class="stat-label">${stat}</span>
-                    ${valueContent}
+                    ${isCharacterEditing
+                ? `<input type="number" class="sheet-input" value="${value}" data-stat="${stat}">`
+                : `<span class="stat-value">${value}</span>`}
                 </div>
                 <div class="stat-mod">${signedMod}</div>
+                
+                <div class="stat-sublist">
+                    <div class="sub-item ${data.competencias_salvacion?.includes(stat) ? 'proficient' : ''}">
+                        <span>Salvación</span>
+                        <span>${data.competencias_salvacion?.includes(stat) ? `+${mod + (data.resumen.Competencia || 2)}` : signedMod}</span>
+                    </div>
+                    ${(skillMapping[stat] || []).map(skill => {
+                    const isProf = data.habilidades?.includes(skill);
+                    const bonus = isProf ? mod + parseInt(data.resumen.Competencia || 2) : mod;
+                    return `
+                        <div class="sub-item ${isProf ? 'proficient' : ''}">
+                            <span>${skill}</span>
+                            <span>${bonus >= 0 ? '+' : ''}${bonus}</span>
+                            ${isProf ? '<div class="prof-dot"></div>' : ''}
+                        </div>`;
+                }).join('')}
+                </div>
             </div>
         `;
+        statsGrid.innerHTML += statHTML;
     }
     statsContainer.appendChild(statsGrid);
+
 
     // Header
     if (isCharacterEditing) {
@@ -748,21 +981,44 @@ function renderCharacterSheet(charId) {
         document.getElementById('sheetLevel').textContent = data.nivel;
     }
 
-    // Vitals
-    const vitalsContainer = document.getElementById('sheetVitals');
-    vitalsContainer.innerHTML = '';
-    for (const [key, val] of Object.entries(data.resumen)) {
-        let valContent = isCharacterEditing
-            ? `<input class="sheet-input" value="${val}" data-vital="${key}" style="text-align:center">`
-            : `<div class="vital-value">${val}</div>`;
-
-        vitalsContainer.innerHTML += `
-            <div class="vital-box">
-                <div class="vital-label">${key}</div>
-                ${valContent}
+    // Combat Vitals (Enhanced)
+    const combatVitals = document.getElementById('sheetCombatVitals');
+    combatVitals.innerHTML = `
+        <div class="combat-pill" style="border-left-color: #ff4444">
+            <span class="pill-icon">❤️</span>
+            <div>
+                <div class="pill-label">Puntos de Golpe</div>
+                <div class="pill-value">${data.resumen.HP}</div>
             </div>
-        `;
-    }
+        </div>
+        <div class="combat-pill" style="border-left-color: #4488ff">
+            <span class="pill-icon">🛡️</span>
+            <div>
+                <div class="pill-label">Clase de Armadura</div>
+                <div class="pill-value">${data.resumen.CA}</div>
+            </div>
+        </div>
+        <div class="combat-pill" style="border-left-color: #44ff88">
+            <span class="pill-icon">⚡</span>
+            <div>
+                <div class="pill-label">Iniciativa</div>
+                <div class="pill-value">${data.resumen.Iniciativa}</div>
+            </div>
+        </div>
+        <div class="combat-pill" style="border-left-color: #ffcc44">
+            <span class="pill-icon">🏃</span>
+            <div>
+                <div class="pill-label">Velocidad</div>
+                <div class="pill-value">${data.resumen.Velocidad}</div>
+            </div>
+        </div>
+    `;
+
+    // Quick Actions
+    renderQuickActions(data);
+
+    // Tab Navigation Management
+    updateTabs(data);
 
     // Features Tab
     let featuresHTML = '<h3 class="feature-section-title">Rasgos de Clase y Raza</h3><div class="feature-grid">';
@@ -850,6 +1106,39 @@ function renderCharacterSheet(charId) {
     spellsHTML += '</div>';
     document.getElementById('tabSpells').innerHTML = spellsHTML;
 
+    // Inventory Tab
+    let inventoryHTML = '<div class="feature-grid">';
+    if (data.inventario && data.inventario.length > 0) {
+        data.inventario.forEach((item, index) => {
+            if (isCharacterEditing) {
+                inventoryHTML += `
+                    <div class="feature-item">
+                        <div style="display:flex; justify-content:space-between; margin-bottom:5px">
+                            <input class="sheet-input" value="${item.nombre}" onchange="updateInventoryItem(${index}, 'nombre', this.value)" style="font-weight:bold; color:var(--accent-gold)">
+                            <button class="btn-delete-item" onclick="deleteInventoryItem(${index})">×</button>
+                        </div>
+                        <textarea class="sheet-textarea" onchange="updateInventoryItem(${index}, 'desc', this.value)">${item.desc}</textarea>
+                    </div>
+                `;
+            } else {
+                inventoryHTML += `
+                    <div class="feature-item">
+                        <h3>${item.nombre}</h3>
+                        <div class="item-desc">${item.desc}</div>
+                    </div>
+                `;
+            }
+        });
+    } else if (!isCharacterEditing) {
+        inventoryHTML += '<div style="grid-column: 1/-1; text-align: center; color: var(--text-secondary); padding: 40px;">El inventario está vacío.</div>';
+    }
+
+    if (isCharacterEditing) {
+        inventoryHTML += `<button class="btn-add-item" onclick="addInventoryItem()">+ Añadir Objeto</button>`;
+    }
+    inventoryHTML += '</div>';
+    document.getElementById('tabInventory').innerHTML = inventoryHTML;
+
     // Reset Tabs
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
     document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
@@ -899,6 +1188,10 @@ function saveCharacterChanges() {
         char.resumen[input.dataset.vital] = input.value;
     });
 
+    // Inventory is updated in real-time via updateInventoryItem, no need to gather here 
+    // unless we change the strategy, but for consistency with traits/spells:
+    // traits/spells are also updated in real-time.
+
     // Skills
     const skillsInput = document.getElementById('editSkills');
     if (skillsInput) {
@@ -946,6 +1239,25 @@ function addSpell() {
     renderCharacterSheet(currentCharacterId);
 }
 
+// === Inventory Actions ===
+function updateInventoryItem(index, field, value) {
+    if (window.characterData[currentCharacterId].inventario[index])
+        window.characterData[currentCharacterId].inventario[index][field] = value;
+}
+
+function deleteInventoryItem(index) {
+    if (confirm('¿Borrar objeto del inventario?')) {
+        window.characterData[currentCharacterId].inventario.splice(index, 1);
+        renderCharacterSheet(currentCharacterId);
+    }
+}
+
+function addInventoryItem() {
+    if (!window.characterData[currentCharacterId].inventario) window.characterData[currentCharacterId].inventario = [];
+    window.characterData[currentCharacterId].inventario.push({ nombre: 'Nuevo Objeto', desc: 'Descripción' });
+    renderCharacterSheet(currentCharacterId);
+}
+
 function exportCharacters() {
     const dataStr = "window.characterData = " + JSON.stringify(window.characterData, null, 4) + ";";
     const blob = new Blob([dataStr], { type: 'text/javascript' });
@@ -982,7 +1294,8 @@ function setupCharacterSheetListeners() {
     // Tab Navigation
     document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
-            const targetId = `tab${e.target.dataset.tab.charAt(0).toUpperCase() + e.target.dataset.tab.slice(1)}`;
+            const targetTab = e.target.dataset.tab;
+            const targetId = `tab${targetTab.charAt(0).toUpperCase() + targetTab.slice(1)}`;
 
             // Toggle Buttons
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -990,7 +1303,8 @@ function setupCharacterSheetListeners() {
 
             // Toggle Content
             document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-            document.getElementById(targetId).classList.add('active');
+            const content = document.getElementById(targetId);
+            if (content) content.classList.add('active');
         });
     });
 
