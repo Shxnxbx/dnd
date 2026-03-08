@@ -1996,7 +1996,7 @@ function setupCharacterSheetListeners() {
     });
 
     // Character Card Click Handlers
-    ['Vel', 'Zero', 'Asthor'].forEach(id => {
+    Object.keys(window.characterData).forEach(id => {
         const card = document.getElementById(`charCard${id}`);
         if (card) {
             const newCard = card.cloneNode(true);
@@ -2074,6 +2074,7 @@ function goToCombatInitiative() {
             note: '',
             charData: char,
             demonicForm: false,
+            tipo: char.tipo || 'jugador',
         };
     });
     setView('combatInit');
@@ -2100,15 +2101,107 @@ function beginCombat() {
 }
 
 function confirmEndCombat() {
-    if (confirm('¿Terminar el combate?')) {
-        combatState.isActive = false;
-        combatState.selectedIds = [];
-        combatState.participants = [];
-        combatState.log = [];
-        combatState.nextLogId = 0;
-        clearSavedCombat();
-        showCombatSetup();
+    showCombatSummary();
+}
+
+function _doClearCombat() {
+    document.getElementById('combatSummaryOverlay')?.remove();
+    combatState.isActive = false;
+    combatState.participants = [];
+    combatState.selectedIds = [];
+    combatState.log = [];
+    combatState.round = 1;
+    combatState.currentIndex = 0;
+    combatState.nextLogId = 0;
+    clearSavedCombat();
+    combatModeActive = false;
+    setView('landing');
+}
+
+function buildHistoryText() {
+    const rounds = {};
+    combatState.log.forEach(entry => {
+        if (!rounds[entry.round]) rounds[entry.round] = [];
+        rounds[entry.round].push(entry);
+    });
+    let text = `=== COMBATE — ${combatState.round} Ronda(s) · ${combatState.participants.length} participantes ===\n\n`;
+    Object.keys(rounds).sort((a,b) => a-b).forEach(round => {
+        text += `RONDA ${round}\n${'─'.repeat(30)}\n`;
+        rounds[round].forEach(entry => {
+            text += `\n${entry.participantName}:\n`;
+            entry.actions.forEach(a => {
+                text += `  ⚔️ ${a.nombre}`;
+                if (a.rollText) text += `\n     ${a.rollText.replace(/\*\*/g, '')}`;
+                if (a.narratorText) text += `\n     📖 ${a.narratorText}`;
+                text += '\n';
+            });
+            if (entry.note) text += `  📝 ${entry.note}\n`;
+        });
+        text += '\n';
+    });
+    return text;
+}
+
+function copyHistoryToClipboard() {
+    const text = buildHistoryText();
+    if (navigator.clipboard) {
+        navigator.clipboard.writeText(text).then(() => showNotification('📋 Historial copiado al portapapeles', 2000));
+    } else {
+        // Fallback
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        showNotification('📋 Historial copiado', 2000);
     }
+}
+
+function showCombatSummary() {
+    document.getElementById('combatSummaryOverlay')?.remove();
+    const rounds = {};
+    combatState.log.filter(e => !e.isCurrent || e.actions.length || e.note).forEach(entry => {
+        if (!rounds[entry.round]) rounds[entry.round] = [];
+        rounds[entry.round].push(entry);
+    });
+    const roundKeys = Object.keys(rounds).sort((a,b) => a-b);
+    const bodyHTML = roundKeys.map(round => {
+        const entries = rounds[round];
+        const entriesHTML = entries.map(entry => `
+            <div style="margin-bottom:10px">
+                <strong style="color:var(--text-primary)">${entry.participantName}</strong>
+                ${entry.actions.map(a => `
+                    <div style="margin-left:12px;margin-top:4px">
+                        <div>⚔️ ${a.nombre}${a.dice && !a.rollText ? ` (${a.dice})` : ''}</div>
+                        ${a.rollText ? `<div class="combat-roll-result">${a.rollText.replace(/\*\*/g, '')}</div>` : ''}
+                        ${a.narratorText ? `<div class="combat-narrator-text">${a.narratorText}</div>` : ''}
+                    </div>`).join('')}
+                ${entry.note ? `<div style="margin-left:12px;font-style:italic;color:var(--text-muted);font-size:12px">📝 ${entry.note}</div>` : ''}
+            </div>`).join('');
+        return `<div style="margin-bottom:16px">
+            <div style="font-weight:700;color:var(--accent-gold);margin-bottom:8px;border-bottom:1px solid var(--border-color);padding-bottom:4px">Ronda ${round}</div>
+            ${entriesHTML || '<div style="color:var(--text-muted);font-style:italic;font-size:12px">Sin acciones registradas</div>'}
+        </div>`;
+    }).join('');
+
+    const overlay = document.createElement('div');
+    overlay.id = 'combatSummaryOverlay';
+    overlay.className = 'combat-resume-overlay';
+    overlay.innerHTML = `
+        <div class="combat-summary-modal">
+            <div class="combat-summary-title">⚔️ Resumen del Combate</div>
+            <div style="text-align:center;color:var(--text-muted);font-size:13px;margin-bottom:8px">
+                ${combatState.round} ronda(s) · ${combatState.participants.length} participantes
+            </div>
+            <div class="combat-summary-body">${bodyHTML || '<div style="color:var(--text-muted);font-style:italic">Sin historial registrado</div>'}</div>
+            <div class="combat-summary-btns">
+                <button class="btn-combat-secondary" onclick="copyHistoryToClipboard()">📋 Copiar</button>
+                <button class="btn-combat-primary" onclick="_doClearCombat()">✕ Finalizar</button>
+                <button class="btn-combat-secondary" onclick="document.getElementById('combatSummaryOverlay')?.remove()">Volver</button>
+            </div>
+        </div>`;
+    document.body.appendChild(overlay);
 }
 
 // ---- Setup Screen ----
@@ -2147,7 +2240,9 @@ function renderCombatSetup() {
             <div class="combat-category-header" style="border-left-color:${cat.color}">${cat.icon} ${cat.label}</div>
             <div class="combat-category-cards">${cardsHTML}</div>
         </div>`;
-    }).join('');
+    }).join('') + `<div style="text-align:center;margin-top:16px">
+        <button class="combat-quick-enemy-btn" onclick="showQuickEnemyModal('setup')">💀 Añadir Enemigo Rápido</button>
+    </div>`;
     const count = combatState.selectedIds.length;
     const countEl = document.getElementById('combatSetupCount');
     if (countEl) countEl.textContent = `${count} seleccionado${count !== 1 ? 's' : ''}`;
@@ -2206,18 +2301,139 @@ function renderTurnQueue() {
         const isDead = p.hp.current <= 0;
         const hpPct = p.hp.max > 0 ? Math.max(0, (p.hp.current / p.hp.max) * 100) : 0;
         const hpColor = hpPct <= 0 ? '#555' : hpPct <= 25 ? '#ff4444' : hpPct <= 50 ? '#ffaa00' : '#4caf50';
-        const cls = ['turn-queue-item', isCurrent ? 'active' : '', isDead ? 'dead' : '', p.demonicForm ? 'demonic' : ''].filter(Boolean).join(' ');
+        const tipoClass = p.tipo || 'jugador';
+        const cls = ['turn-queue-item', isCurrent ? 'active' : '', isDead ? 'dead' : '', p.demonicForm ? 'demonic' : '', tipoClass].filter(Boolean).join(' ');
+        const condIcons = p.conditions.length
+            ? `<div class="tqi-conditions">${p.conditions.map(cId => {
+                  const c = CONDITIONS.find(x => x.id === cId);
+                  return c ? `<span title="${c.title}">${c.label}</span>` : '';
+              }).join('')}</div>`
+            : '';
         return `<div class="${cls}">
             <div class="tqi-init">${p.initiative}</div>
             <div class="tqi-name">${p.name.split(' ')[0]}</div>
             <div class="tqi-hp-bar"><div class="tqi-hp-fill" style="width:${hpPct}%;background:${hpColor}"></div></div>
             <div class="tqi-hp-text">${p.hp.current}/${p.hp.max}</div>
+            ${condIcons}
         </div>`;
     }).join('');
     setTimeout(() => {
         const active = queue.querySelector('.turn-queue-item.active');
         if (active) active.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
     }, 50);
+}
+
+// ---- Dice Rolling Utilities ----
+function rollDiceString(diceStr) {
+    if (!diceStr || diceStr === '—') return { breakdown: '—', total: 0 };
+    // Split by '+' but handle negative numbers
+    const parts = diceStr.replace(/\s/g, '').split('+');
+    let total = 0;
+    const segments = [];
+    for (const part of parts) {
+        const diceMatch = part.match(/^(\d+)d(\d+)$/i);
+        if (diceMatch) {
+            const count = parseInt(diceMatch[1]);
+            const sides = parseInt(diceMatch[2]);
+            const rolls = [];
+            for (let i = 0; i < count; i++) rolls.push(Math.floor(Math.random() * sides) + 1);
+            const sum = rolls.reduce((a, b) => a + b, 0);
+            total += sum;
+            segments.push(`${count}d${sides}:${rolls.join(',')}`);
+        } else {
+            const num = parseInt(part);
+            if (!isNaN(num)) { total += num; segments.push(String(num)); }
+        }
+    }
+    return { breakdown: segments.join(' + '), total };
+}
+
+function rollActionDice(participantId, nombre, atk, dado) {
+    const p = combatState.participants.find(x => x.id === participantId);
+    const entry = getCurrentLogEntry();
+    if (!p || !entry) return;
+
+    let parts = [];
+    let attackTotal = null;
+
+    if (atk && atk !== '—' && atk !== '') {
+        const d20 = Math.floor(Math.random() * 20) + 1;
+        const bonusMatch = atk.replace(/1d20/i, '').match(/[+-]?\d+/);
+        const bonus = bonusMatch ? parseInt(bonusMatch[0]) : 0;
+        attackTotal = d20 + bonus;
+        const isCrit = d20 === 20;
+        const isFumble = d20 === 1;
+        parts.push(`d20:${d20} ${bonus >= 0 ? '+' : ''}${bonus} = **${attackTotal}** para impactar${isCrit ? ' ⚡CRÍTICO!' : isFumble ? ' 💀Pifia!' : ''}`);
+    }
+
+    let damageTotal = 0;
+    if (dado && dado !== '—' && dado !== '') {
+        const dmg = rollDiceString(dado);
+        damageTotal = dmg.total;
+        parts.push(`Daño: ${dmg.breakdown} = **${dmg.total}**`);
+    }
+
+    const rollText = `🎲 ${nombre}: ${parts.join(' / ')}`;
+    const narratorText = generateNarratorText(p.name, nombre, attackTotal, damageTotal, !!atk);
+
+    const existingIdx = entry.actions.findIndex(a => a.nombre === nombre);
+    if (existingIdx >= 0) {
+        entry.actions[existingIdx].rollText = rollText;
+        entry.actions[existingIdx].narratorText = narratorText;
+    } else {
+        entry.actions.push({ nombre, dice: dado || '', rollText, narratorText });
+        // Mark slot
+        const slotKey = inferActionType({ nombre, tipo: '', desc: '' }) === 'adicional' ? 'adicional'
+            : inferActionType({ nombre, tipo: '', desc: '' }) === 'reaccion' ? 'reaccion' : 'accion';
+        if (entry.slots) entry.slots[slotKey] = true;
+    }
+    saveCombatState();
+    renderActivePanel();
+    renderCombatLog();
+}
+
+function generateNarratorText(name, actionName, attackTotal, damageTotal, hasAtk) {
+    const firstName = name.split(' ')[0];
+    const verbs = ['desenvaina', 'empuña', 'lanza', 'canaliza', 'desata'];
+    const verb = verbs[Math.floor(Math.random() * verbs.length)];
+    if (hasAtk && attackTotal !== null) {
+        if (attackTotal >= 12) {
+            return damageTotal > 0
+                ? `${firstName} ${verb} ${actionName} y alcanza con un ${attackTotal} para impactar, infligiendo ${damageTotal} puntos de daño.`
+                : `${firstName} utiliza ${actionName} con un resultado de ${attackTotal}.`;
+        } else {
+            return `${firstName} intenta usar ${actionName}, pero falla el ataque (resultado: ${attackTotal}).`;
+        }
+    } else if (damageTotal > 0) {
+        return `${firstName} activa ${actionName}, causando ${damageTotal} puntos de daño.`;
+    }
+    return `${firstName} utiliza ${actionName}.`;
+}
+
+function showActionDetail(nombre, atk, dado, desc) {
+    document.getElementById('actionDetailOverlay')?.remove();
+    const overlay = document.createElement('div');
+    overlay.id = 'actionDetailOverlay';
+    overlay.className = 'combat-resume-overlay';
+    overlay.onclick = e => { if (e.target === overlay) overlay.remove(); };
+    overlay.innerHTML = `
+        <div class="action-detail-modal">
+            <div class="action-detail-name">${nombre}</div>
+            ${atk && atk !== '—' ? `<div class="action-detail-stat">⚔️ Ataque: <strong>${atk}</strong></div>` : ''}
+            ${dado && dado !== '—' ? `<div class="action-detail-stat">💥 Daño: <strong>${dado}</strong></div>` : ''}
+            ${desc ? `<div class="action-detail-desc">${desc}</div>` : ''}
+            <button class="btn-combat-secondary" onclick="document.getElementById('actionDetailOverlay')?.remove()" style="margin-top:16px;width:100%">Cerrar</button>
+        </div>`;
+    document.body.appendChild(overlay);
+}
+
+function toggleSlotManual(participantId, slotKey) {
+    const entry = getCurrentLogEntry();
+    if (!entry) return;
+    if (!entry.slots) entry.slots = { accion: false, extraAtaque: false, adicional: false, reaccion: false };
+    entry.slots[slotKey] = !entry.slots[slotKey];
+    saveCombatState();
+    renderActivePanel();
 }
 
 function renderActivePanel() {
@@ -2237,47 +2453,95 @@ function renderActivePanel() {
                         title="${c.title}">${c.label} ${c.title}</button>`;
     }).join('');
 
-    // Action chips for characters with data
+    // Concentration banner
+    const concentrationBanner = p.conditions.includes('concentracion')
+        ? `<div class="concentration-banner">🧠 Concentración activa — al recibir daño, tira Constitución</div>`
+        : '';
+
+    // Action slots with 4 independent slots
     let actionChipsHTML = '';
+    const SLOTS = [
+        { key: 'accion',      icon: '⚔️',  label: 'Acción',           tipo: 'accion',    extraOnly: false },
+        { key: 'extraAtaque', icon: '🗡️',  label: 'Ataque Extra',      tipo: 'accion',    extraOnly: true  },
+        { key: 'adicional',   icon: '⚡',  label: 'Acción Adicional',  tipo: 'adicional', extraOnly: false },
+        { key: 'reaccion',    icon: '↩️',  label: 'Reacción',          tipo: 'reaccion',  extraOnly: false },
+    ];
     if (p.charData) {
         const allItems = [...(p.charData.combateExtra || []), ...(p.charData.conjuros || [])];
-        const sections = [
-            { key: 'accion', icon: '🎯', label: 'Acciones' },
-            { key: 'adicional', icon: '⚡', label: 'Adicionales' },
-            { key: 'reaccion', icon: '↩️', label: 'Reacciones' },
-        ];
-        const grouped = sections.map(sec => {
-            const items = allItems.filter(a => inferActionType(a) === sec.key);
-            if (!items.length) return '';
+        const slotSections = SLOTS.map(slot => {
+            if (slot.extraOnly && !p.charData?.extraAttack) return '';
+            const isSlotUsed = (currentEntry?.slots?.[slot.key]) ||
+                (slot.extraOnly
+                    ? false
+                    : currentEntry?.actions.some(a => inferActionType(a) === slot.tipo && !allItems.find(x => x.nombre === a.nombre)?.extraAttack) || false);
+            // For regular accion slot, show actions of tipo accion (excluding extraOnly ones)
+            // For extraAtaque slot, we still show accion type (it's a second use)
+            const items = slot.extraOnly
+                ? allItems.filter(a => inferActionType(a) === 'accion')
+                : allItems.filter(a => inferActionType(a) === slot.tipo);
             const chips = items.map(a => {
-                const dice = a.atk
-                    ? `${a.atk}${a.dado && a.dado !== '—' ? ' / ' + a.dado : ''}`
-                    : (a.dado && a.dado !== '—' ? a.dado : (extractDiceFromDesc(a.desc) || ''));
+                const atk = a.atk || '';
+                const dado = a.dado && a.dado !== '—' ? a.dado : (extractDiceFromDesc(a.desc) || '');
+                const diceDisplay = atk ? `${atk}${dado ? ' / ' + dado : ''}` : dado;
                 const isUsed = currentEntry?.actions.some(x => x.nombre === a.nombre) || false;
                 const safeName = a.nombre.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
-                const safeDice = dice.replace(/'/g, "\\'");
-                const demonicBonus = (p.demonicForm && p.id === 'Vel' && a.atk)
+                const safeDice = diceDisplay.replace(/'/g, "\\'");
+                const safeAtk = atk.replace(/'/g, "\\'");
+                const safeDado = dado.replace(/'/g, "\\'");
+                const safeDesc = (a.desc || '').replace(/'/g, "\\'").replace(/"/g, '&quot;').replace(/\n/g, ' ');
+                const demonicBonus = (p.demonicForm && p.id === 'Vel' && atk)
                     ? '<small class="demonic-bonus">+1d8 Necr.</small>' : '';
-                return `<button class="combat-chip${isUsed ? ' used' : ''}"
-                                onclick="toggleCombatAction('${p.id}','${safeName}','${safeDice}')">
-                    ${a.nombre}${dice ? `<small>${dice}</small>` : ''}${demonicBonus}
-                </button>`;
+                return `<div class="combat-chip-wrapper">
+                    <button class="combat-chip${isUsed ? ' used' : ''}"
+                            onclick="toggleCombatAction('${p.id}','${safeName}','${safeDice}')">
+                        ${a.nombre}${diceDisplay ? `<small>${diceDisplay}</small>` : ''}${demonicBonus}
+                    </button>
+                    ${(atk || dado) ? `<button class="chip-roll-btn" onclick="rollActionDice('${p.id}','${safeName}','${safeAtk}','${safeDado}')" title="Tirar dados">🎲</button>` : ''}
+                    ${a.desc ? `<button class="chip-info-btn" onclick="showActionDetail('${safeName}','${safeAtk}','${safeDado}','${safeDesc}')" title="Ver descripción">ℹ️</button>` : ''}
+                </div>`;
             }).join('');
-            return `<div class="combat-chip-group">
-                <div class="combat-chip-label">${sec.icon} ${sec.label}</div>
-                <div class="combat-chips">${chips}</div>
+            const slotUsedClass = isSlotUsed ? ' used' : '';
+            const btnClass = isSlotUsed ? 'used' : 'libre';
+            const btnLabel = isSlotUsed ? '✅ Usada' : '☐ Libre';
+            return `<div class="combat-slot-section${slotUsedClass}">
+                <div class="combat-slot-header">
+                    <span>${slot.icon} ${slot.label}</span>
+                    <button class="slot-toggle-btn ${btnClass}" onclick="toggleSlotManual('${p.id}','${slot.key}')">${btnLabel}</button>
+                </div>
+                ${items.length ? `<div class="combat-chips">${chips}</div>` : `<div style="font-size:12px;color:var(--text-muted);padding:4px 0">Sin acciones disponibles</div>`}
             </div>`;
-        }).join('');
+        }).filter(Boolean).join('');
+
+        // Invocaciones section for Zero
+        let invocacionesHTML = '';
+        if (p.id === 'Zero' && p.charData?.invocaciones) {
+            const invCards = p.charData.invocaciones.map(inv => `
+                <div class="invocation-card">
+                    <div>
+                        <div class="invocation-name">${inv.emoji} ${inv.nombre}</div>
+                        <div class="invocation-stats">HP ${inv.hp} · CA ${inv.ca} · ${inv.velocidad}</div>
+                    </div>
+                    <div class="invocation-btns">
+                        <button onclick="showInvocationDetail('Zero','${inv.id}')">Ver stats</button>
+                        <button onclick="addInvocationToCombat('Zero','${inv.id}')">+ Al combate</button>
+                    </div>
+                </div>`).join('');
+            invocacionesHTML = `<div class="combat-invocations-section">
+                <div class="combat-actions-title">🔮 Invocaciones de Zero</div>
+                ${invCards}
+            </div>`;
+        }
+
         actionChipsHTML = `<div class="combat-actions-section">
             <div class="combat-actions-title">⚡ Acciones del turno</div>
-            ${grouped}
+            ${slotSections}
             <div class="combat-custom-row">
                 <input type="text" id="customActionInput" class="combat-custom-input"
                        placeholder="Acción personalizada..."
                        onkeydown="if(event.key==='Enter') addCustomCombatAction('${p.id}')">
                 <button onclick="addCustomCombatAction('${p.id}')">+ Añadir</button>
             </div>
-        </div>`;
+        </div>${invocacionesHTML}`;
     } else {
         actionChipsHTML = `<div class="combat-actions-section">
             <div class="combat-actions-title">⚡ Acciones del turno</div>
@@ -2296,7 +2560,11 @@ function renderActivePanel() {
         ? recordedItems.map(a => {
             const safeName = a.nombre.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
             return `<div class="combat-recorded-item">
-                <span>✓ ${a.nombre}${a.dice ? ` — ${a.dice}` : ''}</span>
+                <div style="flex:1">
+                    <span>✓ ${a.nombre}${a.dice && !a.rollText ? ` — ${a.dice}` : ''}</span>
+                    ${a.rollText ? `<div class="combat-roll-result" style="font-size:10px">${a.rollText.replace(/\*\*/g, '')}</div>` : ''}
+                    ${a.narratorText ? `<div class="combat-narrator-text" style="font-size:10px">${a.narratorText}</div>` : ''}
+                </div>
                 <button onclick="removeCombatAction('${p.id}','${safeName}')">×</button>
             </div>`;
         }).join('')
@@ -2346,6 +2614,7 @@ function renderActivePanel() {
                 ${p.speed ? `<div style="font-size:12px;color:var(--text-muted);margin-top:4px">💨 ${p.speed}</div>` : ''}
             </div>
         </div>
+        ${concentrationBanner}
         ${demonicToggleHTML}
         <div class="combat-conds-bar">${condHTML}</div>
         ${actionChipsHTML}
@@ -2370,6 +2639,7 @@ function createCurrentTurnEntry() {
         participantId: p.id,
         participantName: p.name,
         actions: [],
+        slots: { accion: false, extraAtaque: false, adicional: false, reaccion: false },
         note: '',
         isCurrent: true,
     });
@@ -2386,9 +2656,25 @@ function getLogEntry(logId) {
 function toggleCombatAction(participantId, nombre, dice) {
     const entry = getCurrentLogEntry();
     if (!entry) return;
+    if (!entry.slots) entry.slots = { accion: false, extraAtaque: false, adicional: false, reaccion: false };
     const idx = entry.actions.findIndex(a => a.nombre === nombre);
-    if (idx >= 0) entry.actions.splice(idx, 1);
-    else entry.actions.push({ nombre, dice: dice || '' });
+    if (idx >= 0) {
+        entry.actions.splice(idx, 1);
+    } else {
+        entry.actions.push({ nombre, dice: dice || '' });
+        // Determine action type to mark slot
+        const p = combatState.participants.find(x => x.id === participantId);
+        if (p?.charData) {
+            const allItems = [...(p.charData.combateExtra || []), ...(p.charData.conjuros || [])];
+            const actionObj = allItems.find(a => a.nombre === nombre);
+            if (actionObj) {
+                const tipo = inferActionType(actionObj);
+                if (tipo === 'adicional') entry.slots.adicional = true;
+                else if (tipo === 'reaccion') entry.slots.reaccion = true;
+                else entry.slots.accion = true;
+            }
+        }
+    }
     saveCombatState();
     renderActivePanel();
     renderCombatLog();
@@ -2497,7 +2783,13 @@ function renderCombatLog() {
     const entries = [...combatState.log].reverse();
     logEl.innerHTML = entries.map(entry => {
         const p = combatState.participants.find(x => x.id === entry.participantId);
-        const actionsStr = entry.actions.map(a => `${a.nombre}${a.dice ? ` (${a.dice})` : ''}`).join(' · ') || '—';
+        const actionsHTML = entry.actions.length
+            ? entry.actions.map(a => `<div class="log-action-item">
+                <div>✓ ${a.nombre}${a.dice && !a.rollText ? ` (${a.dice})` : ''}</div>
+                ${a.rollText ? `<div class="combat-roll-result">${a.rollText}</div>` : ''}
+                ${a.narratorText ? `<div class="combat-narrator-text">${a.narratorText}</div>` : ''}
+            </div>`).join('')
+            : '<span style="color:var(--text-muted)">—</span>';
         return `<div class="combat-log-entry${entry.isCurrent ? ' log-current' : ''}">
             <div class="log-entry-header">
                 <span class="log-round-badge">R${entry.round}</span>
@@ -2505,7 +2797,7 @@ function renderCombatLog() {
                 ${entry.isCurrent ? '<span class="log-current-badge">← ahora</span>' : ''}
                 <button class="log-edit-toggle" onclick="toggleLogEdit(${entry.id})" title="Editar">✏️</button>
             </div>
-            <div class="log-actions-display">${actionsStr}</div>
+            <div class="log-actions-display">${actionsHTML}</div>
             ${entry.note ? `<div class="log-note">📝 ${entry.note}</div>` : ''}
             <div class="log-edit-area" id="logEdit_${entry.id}" style="display:none;">
                 ${renderLogEditArea(entry, p)}
@@ -2518,7 +2810,14 @@ function renderCombatLog() {
 function setParticipantHp(id, value) {
     const p = combatState.participants.find(x => x.id === id);
     if (!p) return;
+    const prevHp = p.hp.current;
     p.hp.current = Math.max(0, Math.min(p.hp.max, isNaN(value) ? p.hp.current : value));
+    // Concentration save reminder
+    if (prevHp > p.hp.current && p.conditions.includes('concentracion')) {
+        const dmgTaken = prevHp - p.hp.current;
+        const cd = Math.max(10, Math.floor(dmgTaken / 2));
+        showNotification(`🧠 Concentración: ¡Tirada de CON CD ${cd}!`, 4000);
+    }
     saveCombatState();
     // Lightweight DOM update — don't rebuild panel (would kill slider focus)
     const hpDisplay = document.getElementById('activeHpDisplay');
@@ -2545,6 +2844,39 @@ function toggleParticipantCondition(id, condId) {
 }
 
 function nextCombatTurn() {
+    const current = getCurrentLogEntry();
+    if (!current?.actions.length && !current?.note?.trim()) {
+        showNextTurnWarning();
+        return;
+    }
+    _doNextTurn();
+}
+
+function showNextTurnWarning() {
+    if (document.getElementById('nextTurnWarning')) return;
+    const panel = document.getElementById('combatActivePanel');
+    if (!panel) return;
+    const div = document.createElement('div');
+    div.id = 'nextTurnWarning';
+    div.className = 'next-turn-warning';
+    div.innerHTML = `⚠️ Sin acciones registradas. ¿Seguro que quieres continuar?
+        <div style="margin-top:8px;display:flex;gap:8px;justify-content:center">
+            <button class="btn-combat-secondary" onclick="confirmNextTurn()" style="padding:6px 16px">Continuar</button>
+            <button class="btn-combat-secondary" onclick="dismissNextTurnWarning()" style="padding:6px 16px">Cancelar</button>
+        </div>`;
+    panel.prepend(div);
+}
+
+function confirmNextTurn() {
+    dismissNextTurnWarning();
+    _doNextTurn();
+}
+
+function dismissNextTurnWarning() {
+    document.getElementById('nextTurnWarning')?.remove();
+}
+
+function _doNextTurn() {
     const current = getCurrentLogEntry();
     if (current) current.isCurrent = false;
     combatState.currentIndex++;
@@ -2573,6 +2905,142 @@ function toggleDemonicFormInCombat(participantId) {
     }
     saveCombatState();
     renderCombatManager();
+}
+
+// ---- Invocation Functions ----
+function showInvocationDetail(charId, invId) {
+    const char = window.characterData[charId];
+    const inv = char?.invocaciones?.find(x => x.id === invId);
+    if (!inv) return;
+    document.getElementById('invocationDetailOverlay')?.remove();
+    const overlay = document.createElement('div');
+    overlay.id = 'invocationDetailOverlay';
+    overlay.className = 'combat-resume-overlay';
+    overlay.onclick = e => { if (e.target === overlay) overlay.remove(); };
+    const habilidadesHTML = inv.habilidades?.map(h => `<div class="invocation-ability">• ${h}</div>`).join('') || '';
+    overlay.innerHTML = `
+        <div class="invocation-detail-modal">
+            <div class="combat-resume-title">${inv.emoji} ${inv.nombre}</div>
+            <div style="display:flex;gap:16px;justify-content:center;margin:12px 0">
+                <div class="combat-vital-block" style="min-width:80px;text-align:center">
+                    <div class="combat-vital-label">❤️ HP</div>
+                    <div class="combat-vital-value">${inv.hp}</div>
+                </div>
+                <div class="combat-vital-block" style="min-width:80px;text-align:center">
+                    <div class="combat-vital-label">🛡️ CA</div>
+                    <div class="combat-vital-value">${inv.ca}</div>
+                </div>
+                <div class="combat-vital-block" style="min-width:80px;text-align:center">
+                    <div class="combat-vital-label">💨 Vel.</div>
+                    <div class="combat-vital-value" style="font-size:14px">${inv.velocidad}</div>
+                </div>
+            </div>
+            <div style="background:rgba(255,255,255,0.04);border-radius:8px;padding:10px;margin:8px 0">
+                <div style="font-size:12px;color:var(--text-muted);margin-bottom:4px">⚔️ Ataque</div>
+                <div style="font-size:13px;color:var(--text-primary)">${inv.ataque}</div>
+            </div>
+            ${habilidadesHTML ? `<div style="margin-top:10px">
+                <div style="font-size:12px;color:var(--text-muted);margin-bottom:6px">Habilidades</div>
+                ${habilidadesHTML}
+            </div>` : ''}
+            <div style="display:flex;gap:10px;margin-top:16px">
+                <button class="btn-combat-primary" style="flex:1" onclick="addInvocationToCombat('${charId}','${invId}');document.getElementById('invocationDetailOverlay')?.remove()">+ Al combate</button>
+                <button class="btn-combat-secondary" style="flex:1" onclick="document.getElementById('invocationDetailOverlay')?.remove()">Cerrar</button>
+            </div>
+        </div>`;
+    document.body.appendChild(overlay);
+}
+
+function addInvocationToCombat(charId, invId) {
+    const char = window.characterData[charId];
+    const inv = char?.invocaciones?.find(x => x.id === invId);
+    if (!inv) return;
+    const uid = `inv_${invId}_${Date.now()}`;
+    const participant = {
+        id: uid,
+        name: inv.nombre,
+        initiative: 0,
+        hp: { current: inv.hp, max: inv.hp },
+        ac: String(inv.ca),
+        baseAc: String(inv.ca),
+        speed: inv.velocidad,
+        baseSpeed: inv.velocidad,
+        conditions: [],
+        note: '',
+        charData: null,
+        demonicForm: false,
+        tipo: 'aliado',
+    };
+    // Prompt for initiative
+    const initVal = prompt(`Iniciativa para ${inv.nombre}:`, '0');
+    participant.initiative = parseInt(initVal) || 0;
+    combatState.participants.push(participant);
+    combatState.participants.sort((a, b) => (b.initiative || 0) - (a.initiative || 0));
+    saveCombatState();
+    renderCombatManager();
+    showNotification(`🔮 ${inv.nombre} añadido al combate`, 2000);
+}
+
+// ---- Quick Enemy Functions ----
+function showQuickEnemyModal(context) {
+    document.getElementById('quickEnemyOverlay')?.remove();
+    const overlay = document.createElement('div');
+    overlay.id = 'quickEnemyOverlay';
+    overlay.className = 'combat-resume-overlay';
+    overlay.innerHTML = `
+        <div class="quick-enemy-modal">
+            <div class="quick-enemy-title">💀 Enemigo Rápido</div>
+            <input id="qeName" class="quick-enemy-input" placeholder="Nombre (ej: Goblin)" autocomplete="off">
+            <input id="qeHp" class="quick-enemy-input" type="number" placeholder="PG máximos" min="1">
+            <input id="qeAc" class="quick-enemy-input" type="number" placeholder="Clase de Armadura" min="1">
+            ${context === 'combat' ? `<input id="qeInit" class="quick-enemy-input" type="number" placeholder="Iniciativa (opcional)">` : ''}
+            <div class="quick-enemy-btns">
+                <button class="btn-combat-primary" onclick="submitQuickEnemy('${context}')">Añadir</button>
+                <button class="btn-combat-secondary" onclick="document.getElementById('quickEnemyOverlay')?.remove()">Cancelar</button>
+            </div>
+        </div>`;
+    document.body.appendChild(overlay);
+    document.getElementById('qeName')?.focus();
+}
+
+function submitQuickEnemy(context) {
+    const name = document.getElementById('qeName')?.value?.trim();
+    const hp = parseInt(document.getElementById('qeHp')?.value) || 10;
+    const ac = parseInt(document.getElementById('qeAc')?.value) || 10;
+    const initEl = document.getElementById('qeInit');
+    const initiative = initEl ? (parseInt(initEl.value) || 0) : 0;
+    if (!name) { showNotification('⚠️ Introduce un nombre', 2000); return; }
+
+    const uid = `qe_${Date.now()}`;
+    const charData = {
+        id: uid, tipo: 'enemigo', nombre: name,
+        clase: 'Enemigo', nivel: '—', imagen: '',
+        resumen: { HP: String(hp), CA: String(ac), Velocidad: '30ft' },
+        combateExtra: [], conjuros: [],
+    };
+    window.characterData[uid] = charData;
+    document.getElementById('quickEnemyOverlay')?.remove();
+
+    if (context === 'setup') {
+        combatState.selectedIds.push(uid);
+        renderCombatSetup();
+        showNotification(`💀 ${name} añadido a la selección`, 2000);
+    } else {
+        const participant = {
+            id: uid, name,
+            initiative,
+            hp: { current: hp, max: hp },
+            ac: String(ac), baseAc: String(ac),
+            speed: '30ft', baseSpeed: '30ft',
+            conditions: [], note: '', charData,
+            demonicForm: false, tipo: 'enemigo',
+        };
+        combatState.participants.push(participant);
+        combatState.participants.sort((a, b) => (b.initiative || 0) - (a.initiative || 0));
+        saveCombatState();
+        renderCombatManager();
+        showNotification(`💀 ${name} añadido al combate`, 2000);
+    }
 }
 
 // ---- Auto-save Combat State ----

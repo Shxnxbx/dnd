@@ -2,6 +2,7 @@ window.characterData = {
     "Vel": {
         "id": "Vel",
         "tipo": "jugador",
+        "extraAttack": true,
         "nombre": "Vel'Rhazal Vardros",
         "raza": "Humano Demonio",
         "clase": "Brujo (Hexblade)",
@@ -313,11 +314,67 @@ window.characterData = {
                 "dado": "—",
                 "desc": "1 turno intangible: Inmune a daño no mágico, atraviesas paredes."
             }
+        ],
+        "invocaciones": [
+            {
+                "id": "diablillo",
+                "nombre": "Diablillo Ígneo",
+                "emoji": "🕷️",
+                "hp": 22,
+                "ca": 13,
+                "velocidad": "Vuelo 30ft",
+                "ataque": "+5 (1d4+3 + 1d6 fuego)",
+                "habilidades": [
+                    "Lluvia Ígnea (2/día): Línea 5×20ft, DEX CD 13, 1d6 fuego + quemadura.",
+                    "En Sello del Vacío: +10HP, +1d6 fuego, Detonación en área (3d6 fuego)."
+                ]
+            },
+            {
+                "id": "arana",
+                "nombre": "Araña Etérea",
+                "emoji": "🕸️",
+                "hp": 25,
+                "ca": 14,
+                "velocidad": "Trepar",
+                "ataque": "+5 (1d8+2 + 1d6 veneno)",
+                "habilidades": [
+                    "Red (2/día): 20ft área, Inmoviliza (CD 13).",
+                    "En Sello del Vacío: +10HP, +1d8 atq, Veneno/Necrótico en área."
+                ]
+            },
+            {
+                "id": "moscosidad",
+                "nombre": "Moscosidad Defensiva",
+                "emoji": "🛡️",
+                "hp": 40,
+                "ca": 16,
+                "velocidad": "30ft",
+                "ataque": "2d6 contundente",
+                "habilidades": [
+                    "Inmune a daño cortante y contundente.",
+                    "Muro de Carne (Reacción): Absorbe daño de Zero.",
+                    "En Sello del Vacío: +20HP, +1d6 daño, crea copias al recibir golpes."
+                ]
+            },
+            {
+                "id": "sanguinario",
+                "nombre": "Sanguinario del Olvido",
+                "emoji": "🩸",
+                "hp": 33,
+                "ca": 15,
+                "velocidad": "30ft",
+                "ataque": "+6 (2d6 perf + 1d6 necrótico). Recupera HP.",
+                "habilidades": [
+                    "Interrupción Vital (Reacción): Counterspell + daño.",
+                    "En Sello del Vacío: +15HP, Campo Antimagia menor."
+                ]
+            }
         ]
     },
     "Asthor": {
         "id": "Asthor",
         "tipo": "jugador",
+        "extraAttack": true,
         "nombre": "Asthor, Martillo Argento",
         "raza": "Enano",
         "clase": "Paladín",
