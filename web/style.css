@@ -1218,8 +1218,8 @@ button, .card, .pin, .tab-btn, .hud-btn, .die-btn,
     font-family: var(--font-heading);
     font-size: 15px;
     letter-spacing: 1px;
-    cursor: not-allowed;
-    opacity: 0.75;
+    cursor: pointer;
+    opacity: 0.85;
     transition: all 0.25s ease;
     box-shadow: 0 0 12px rgba(180, 0, 0, 0.2);
     position: relative;
@@ -1237,7 +1237,53 @@ button, .card, .pin, .tab-btn, .hud-btn, .die-btn,
 .btn-demonic:hover {
     border-color: rgba(220, 50, 50, 0.8);
     box-shadow: 0 0 20px rgba(200, 0, 0, 0.35);
-    opacity: 0.9;
+    opacity: 1;
+}
+
+.btn-demonic.active {
+    opacity: 1;
+    background: linear-gradient(135deg, rgba(160, 0, 0, 0.9), rgba(80, 0, 0, 0.95));
+    border-color: rgba(255, 60, 60, 0.9);
+    border-left-color: #ff2222;
+    box-shadow: 0 0 24px rgba(255, 50, 50, 0.55), 0 0 50px rgba(200, 0, 0, 0.3);
+    animation: demonicPulse 1.8s ease-in-out infinite;
+}
+
+@keyframes demonicPulse {
+    0%, 100% { box-shadow: 0 0 20px rgba(255, 50, 50, 0.5); }
+    50%       { box-shadow: 0 0 40px rgba(255, 50, 50, 0.85), 0 0 70px rgba(200, 0, 0, 0.4); }
+}
+
+.btn-demonic-turn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 18px;
+    background: rgba(40, 0, 0, 0.7);
+    border: 1px solid rgba(180, 30, 30, 0.5);
+    border-radius: 8px;
+    color: #ff9999;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.btn-demonic-turn:hover {
+    background: rgba(70, 0, 0, 0.85);
+    border-color: rgba(220, 50, 50, 0.7);
+}
+
+.combat-pill.demonic-active .pill-value {
+    color: #ff6666;
+    font-weight: bold;
+}
+
+.feature-chevron {
+    font-size: 10px;
+    color: var(--text-muted, #888);
+    transition: transform 0.2s;
+    flex-shrink: 0;
+    margin-left: 8px;
+    pointer-events: none;
 }
 
 .action-card {

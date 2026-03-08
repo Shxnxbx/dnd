@@ -4,7 +4,7 @@ window.characterData = {
         "nombre": "Vel'Rhazal Vardros",
         "raza": "Humano Demonio",
         "clase": "Brujo (Hexblade)",
-        "nivel": 4,
+        "nivel": 5,
         "fondo": "Criminal",
         "imagen": "assets/imagenes/Vel_profile_pic.jpg",
         "imagenScale": 1,
@@ -72,7 +72,7 @@ window.characterData = {
             }
         ],
         "ranuras": [
-            { "nombre": "Pacto (Nv2)", "total": 2 }
+            { "nombre": "Pacto (Nv3)", "total": 2 }
         ],
         "conjuros": [
             {
@@ -142,7 +142,7 @@ window.characterData = {
         "nombre": "Zero",
         "raza": "Warforged",
         "clase": "Mago Invocador del Vacío",
-        "nivel": 4,
+        "nivel": 5,
         "fondo": "Artesano",
         "imagen": "assets/imagenes/Zero_profile_pic.jpg",
         "imagenScale": 1,
@@ -159,7 +159,7 @@ window.characterData = {
             "CA": "19",
             "Iniciativa": "+2",
             "Velocidad": "30ft",
-            "Competencia": "+2"
+            "Competencia": "+3"
         },
         "habilidades": [
             "Investigación",
@@ -207,7 +207,8 @@ window.characterData = {
         ],
         "ranuras": [
             { "nombre": "Nv1", "total": 4 },
-            { "nombre": "Nv2", "total": 3 }
+            { "nombre": "Nv2", "total": 3 },
+            { "nombre": "Nv3", "total": 2 }
         ],
         "conjuros": [
             {
@@ -287,7 +288,7 @@ window.characterData = {
         "nombre": "Asthor, Martillo Argento",
         "raza": "Enano",
         "clase": "Paladín",
-        "nivel": 4,
+        "nivel": 5,
         "fondo": "Soldado",
         "imagen": "assets/imagenes/Asthor_profile_pic.jpg",
         "imagenScale": 1,
@@ -367,7 +368,8 @@ window.characterData = {
             }
         ],
         "ranuras": [
-            { "nombre": "Nv1", "total": 3 }
+            { "nombre": "Nv1", "total": 4 },
+            { "nombre": "Nv2", "total": 2 }
         ],
         "conjuros": [
             {

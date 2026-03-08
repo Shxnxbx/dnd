@@ -668,6 +668,7 @@ const conditionsState = {};
 const deathSaveState = {};
 const notesState = {};
 const diceHistory = [];
+const demonicFormState = {}; // { charId: { active: bool, turnsLeft: int } }
 
 const CONDITIONS = [
     { id: 'envenenado',    label: '🤢', title: 'Envenenado' },
@@ -685,6 +686,7 @@ function saveStateToStorage() {
         localStorage.setItem('dnd_inspiration',JSON.stringify(inspirationState));
         localStorage.setItem('dnd_conditions', JSON.stringify(conditionsState));
         localStorage.setItem('dnd_deathsaves', JSON.stringify(deathSaveState));
+        localStorage.setItem('dnd_demonic',    JSON.stringify(demonicFormState));
         localStorage.setItem('dnd_notes',      JSON.stringify(notesState));
     } catch(e) {}
 }
@@ -696,6 +698,7 @@ function loadStateFromStorage() {
         const ins  = localStorage.getItem('dnd_inspiration');if (ins)  Object.assign(inspirationState, JSON.parse(ins));
         const cond = localStorage.getItem('dnd_conditions'); if (cond) Object.assign(conditionsState,  JSON.parse(cond));
         const ds   = localStorage.getItem('dnd_deathsaves'); if (ds)   Object.assign(deathSaveState,   JSON.parse(ds));
+        const dem  = localStorage.getItem('dnd_demonic');    if (dem)  Object.assign(demonicFormState, JSON.parse(dem));
         const nt   = localStorage.getItem('dnd_notes');      if (nt)   Object.assign(notesState,       JSON.parse(nt));
     } catch(e) {}
 }
@@ -1058,12 +1061,11 @@ function updateTabs(data) {
 }
 
 function renderTraitItem(trait, index, tab) {
-    const isExpanded = false; // Initial state
     return `
         <div class="feature-item" data-index="${index}">
-            <div class="feature-header" style="display:flex; justify-content:space-between; cursor:pointer;">
-                <h3 style="margin:0">${trait.nombre}</h3>
-                ${isCharacterEditing ? `<button class="btn-delete-item" onclick="deleteFeature(${index})">×</button>` : ''}
+            <div class="feature-header" style="display:flex; justify-content:space-between; align-items:center; cursor:pointer;">
+                <h3 style="margin:0; flex:1">${trait.nombre}</h3>
+                ${isCharacterEditing ? `<button class="btn-delete-item" onclick="deleteFeature(${index})">×</button>` : '<span class="feature-chevron">▼</span>'}
             </div>
             <div class="item-desc collapsible">${trait.desc}</div>
         </div>
@@ -1186,9 +1188,9 @@ function renderSpellsWithFilters(data) {
 
         html += `
             <div class="spell-item" data-name="${spell.nombre.toLowerCase()}" data-level="${levelKey}">
-                <div class="feature-header" style="display:flex; justify-content:space-between; cursor:pointer;">
-                    <h3 style="margin:0">${spell.nombre}</h3>
-                    ${isCharacterEditing ? `<button class="btn-delete-item" onclick="deleteSpell(${index})">×</button>` : ''}
+                <div class="feature-header" style="display:flex; justify-content:space-between; align-items:center; cursor:pointer;">
+                    <h3 style="margin:0; flex:1">${spell.nombre}</h3>
+                    ${isCharacterEditing ? `<button class="btn-delete-item" onclick="deleteSpell(${index})">×</button>` : '<span class="feature-chevron">▼</span>'}
                 </div>
                 <div class="item-meta">${spell.nivel === "Truco" ? "Truco" : "Nivel " + spell.nivel} • ${type}</div>
                 <div class="item-desc collapsible">${spell.desc}</div>
@@ -1233,14 +1235,85 @@ function renderSpellsWithFilters(data) {
 }
 
 function setupCollapsibleEvents() {
-    document.querySelectorAll('.feature-header').forEach(header => {
-        header.addEventListener('click', () => {
-            const desc = header.nextElementSibling;
-            if (desc && desc.classList.contains('collapsible')) {
-                desc.classList.toggle('expanded');
-            }
-        });
+    const sheet = document.getElementById('characterSheetContainer');
+    if (!sheet || sheet._collapsibleSetup) return;
+    sheet._collapsibleSetup = true;
+    sheet.addEventListener('click', (e) => {
+        const header = e.target.closest('.feature-header');
+        if (!header || e.target.closest('button')) return;
+        const desc = header.nextElementSibling;
+        if (desc?.classList.contains('collapsible')) {
+            const expanding = !desc.classList.contains('expanded');
+            desc.classList.toggle('expanded', expanding);
+            const chevron = header.querySelector('.feature-chevron');
+            if (chevron) chevron.textContent = expanding ? '▲' : '▼';
+        }
     });
+}
+
+// ── Demonic Form ─────────────────────────────
+function renderDemonicSection(charId) {
+    const section = document.getElementById('sheetResources');
+    if (!section) return;
+    section.style.display = 'flex';
+    let html = renderConditionsBar(charId);
+    if (charId === 'Vel') {
+        const ds = demonicFormState[charId] || { active: false, turnsLeft: 0 };
+        const btnCls = 'btn-demonic' + (ds.active ? ' active' : '');
+        const label  = ds.active ? `😈 Demoníaca — ${ds.turnsLeft}🔥` : '😈 Forma Demoníaca';
+        html += `<button class="${btnCls}" onclick="toggleDemonicForm('Vel')">${label}</button>`;
+        if (ds.active) {
+            html += `<button class="btn-demonic-turn" onclick="advanceDemonicTurn('Vel')">⏭️ Siguiente turno</button>`;
+        }
+    }
+    section.innerHTML = html;
+}
+
+function toggleDemonicForm(charId) {
+    if (!demonicFormState[charId]) demonicFormState[charId] = { active: false, turnsLeft: 0 };
+    const ds = demonicFormState[charId];
+    ds.active = !ds.active;
+    ds.turnsLeft = ds.active ? 6 : 0;
+    updateDemonicFormDisplay(charId);
+    saveStateToStorage();
+    showNotification(ds.active ? '😈 ¡Forma Demoníaca activa!' : '💔 Forma Demoníaca terminada', 2200);
+}
+
+function advanceDemonicTurn(charId) {
+    const ds = demonicFormState[charId];
+    if (!ds?.active) return;
+    ds.turnsLeft = Math.max(0, ds.turnsLeft - 1);
+    if (ds.turnsLeft === 0) {
+        ds.active = false;
+        showNotification('💀 Forma Demoníaca terminada', 2500);
+    }
+    updateDemonicFormDisplay(charId);
+    saveStateToStorage();
+}
+
+function updateDemonicFormDisplay(charId) {
+    const ds  = demonicFormState[charId] || { active: false };
+    const data = window.characterData[charId];
+    if (!data) return;
+
+    // Update CA pill
+    const pillCA = document.getElementById('pillCA');
+    if (pillCA) {
+        const v = pillCA.querySelector('.pill-value');
+        if (v) v.textContent = ds.active ? String(parseInt(data.resumen.CA) + 2) : data.resumen.CA;
+        pillCA.classList.toggle('demonic-active', ds.active);
+        pillCA.style.borderLeftColor = ds.active ? '#ff2222' : '#4488ff';
+    }
+    // Update Speed pill
+    const pillSpeed = document.getElementById('pillSpeed');
+    if (pillSpeed) {
+        const v = pillSpeed.querySelector('.pill-value');
+        if (v) v.textContent = ds.active ? '50ft' : data.resumen.Velocidad;
+        pillSpeed.classList.toggle('demonic-active', ds.active);
+        pillSpeed.style.borderLeftColor = ds.active ? '#ff2222' : '#ffcc44';
+    }
+    // Re-render button section
+    renderDemonicSection(charId);
 }
 function renderCharacterSheet(charId) {
     if (!window.characterData || !window.characterData[charId]) {
@@ -1328,7 +1401,7 @@ function renderCharacterSheet(charId) {
     // HP Bar (replaces HP pill)
     const combatVitals = document.getElementById('sheetCombatVitals');
     combatVitals.innerHTML = renderHpSection(charId) + `
-        <div class="combat-pill" style="border-left-color: #4488ff">
+        <div class="combat-pill" id="pillCA" style="border-left-color: #4488ff">
             <span class="pill-icon">🛡️</span>
             <div>
                 <div class="pill-label">CA</div>
@@ -1342,7 +1415,7 @@ function renderCharacterSheet(charId) {
                 <div class="pill-value">${data.resumen.Iniciativa}</div>
             </div>
         </div>
-        <div class="combat-pill" style="border-left-color: #ffcc44">
+        <div class="combat-pill" id="pillSpeed" style="border-left-color: #ffcc44">
             <span class="pill-icon">🏃</span>
             <div>
                 <div class="pill-label">Velocidad</div>
@@ -1364,11 +1437,12 @@ function renderCharacterSheet(charId) {
     // Conditions bar + character-specific buttons
     const resourcesSection = document.getElementById('sheetResources');
     resourcesSection.style.display = 'flex';
-    let resourcesHTML = renderConditionsBar(charId);
-    if (charId === 'Vel') {
-        resourcesHTML += `<button class="btn-demonic" title="Transformación demoníaca (próximamente)" disabled>😈 Forma Demoníaca</button>`;
+    renderDemonicSection(charId);
+
+    // Restore demonic form visual state if active
+    if (charId === 'Vel' && demonicFormState[charId]?.active) {
+        updateDemonicFormDisplay(charId);
     }
-    resourcesSection.innerHTML = resourcesHTML;
 
     // Tab Navigation Management
     updateTabs(data);
