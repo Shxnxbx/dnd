@@ -247,6 +247,21 @@
         text-overflow: ellipsis;
     }
 
+    /* ── Expandable cards: preview + expand on tap ── */
+    .item-desc.collapsible {
+        max-height: 3.2em;
+        overflow: hidden;
+        -webkit-mask-image: linear-gradient(to bottom, black 55%, transparent 100%);
+        mask-image: linear-gradient(to bottom, black 55%, transparent 100%);
+        transition: max-height 0.35s ease;
+    }
+
+    .item-desc.collapsible.expanded {
+        max-height: 600px;
+        -webkit-mask-image: none;
+        mask-image: none;
+    }
+
     /* Tabs */
     .sheet-tabs-nav {
         background: rgba(15, 20, 30, 0.9);
