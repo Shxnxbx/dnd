@@ -309,11 +309,16 @@
         min-width: 185px;
     }
 
-    /* Zoom controls */
+    /* Zoom controls: only show on map view */
     .zoom-controls {
         position: fixed;
         bottom: 20px;
         right: 16px;
+        display: none !important;
+    }
+
+    body.view-map .zoom-controls {
+        display: flex !important;
     }
 
     .hud-btn {
