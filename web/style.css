@@ -4539,3 +4539,161 @@ body.role-jugador .master-only { display: none !important; }
     .player-active-header { padding: 10px 14px; }
     .player-active-footer { padding: 10px 14px; }
 }
+
+/* ============================================
+   TURN PLANNER — Player Mode
+   ============================================ */
+.turn-planner {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 14px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 14px;
+}
+
+.turn-planner-slots {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.planner-slot {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    background: rgba(255,255,255,0.03);
+    border: 1px dashed var(--border-color);
+    min-height: 38px;
+    transition: all 0.15s;
+}
+
+.planner-slot.filled {
+    border-style: solid;
+    border-color: var(--accent-gold);
+    background: rgba(212,175,55,0.07);
+}
+
+.planner-slot-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    min-width: 84px;
+    flex-shrink: 0;
+}
+
+.planner-slot.filled .planner-slot-label {
+    color: var(--accent-gold);
+}
+
+.planner-slot-action {
+    flex: 1;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.planner-slot-empty {
+    flex: 1;
+    font-size: 12px;
+    color: var(--text-muted);
+    opacity: 0.5;
+    font-style: italic;
+}
+
+.planner-slot-remove {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 13px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    line-height: 1;
+    flex-shrink: 0;
+    transition: all 0.15s;
+}
+
+.planner-slot-remove:hover {
+    color: #ff6666;
+    background: rgba(255,102,102,0.12);
+}
+
+.turn-planner-dice {
+    border-top: 1px solid var(--border-color);
+    padding-top: 10px;
+    margin-top: 2px;
+}
+
+.planner-dice-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 8px;
+}
+
+.planner-dice-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+}
+
+.planner-dice-name {
+    font-size: 12px;
+    color: var(--text-secondary);
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.planner-dice-badges {
+    display: flex;
+    gap: 5px;
+    flex-shrink: 0;
+}
+
+.planner-dice-badge {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-family: var(--font-mono, monospace);
+}
+
+.planner-dice-badge.atk {
+    background: rgba(212,175,55,0.15);
+    color: var(--accent-gold);
+    border: 1px solid rgba(212,175,55,0.3);
+}
+
+.planner-dice-badge.dmg {
+    background: rgba(220,80,80,0.15);
+    color: #ff9999;
+    border: 1px solid rgba(220,80,80,0.3);
+}
+
+.planner-dice-empty {
+    font-size: 12px;
+    color: var(--text-muted);
+    opacity: 0.5;
+    font-style: italic;
+}
+
+.combat-actions-chips-section {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}

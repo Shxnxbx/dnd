@@ -2901,7 +2901,10 @@ function renderActivePanel(targetEl, forcePIdx) {
         ? `<div class="concentration-banner">🧠 Concentración activa — al recibir daño, tira Constitución</div>`
         : '';
 
-    // Action slots (3 slots — Segunda Acción is now its own consecutive mini-turn)
+    // Player mode flag — determines planner vs master slot UI
+    const playerMode = forcePIdx !== undefined;
+
+    // Action slots
     let actionChipsHTML = '';
     const SLOTS = [
         { key: 'accion',    icon: '⚔️',  label: 'Acción',          tipo: 'accion'    },
@@ -2913,12 +2916,11 @@ function renderActivePanel(targetEl, forcePIdx) {
     const customItems = (p.customActions || []).map(a => ({ ...a, _custom: true }));
     const allItems = [...baseItems, ...customItems];
 
-    // Helper to render action chips for any item list
+    // Helper to render action chips
     const renderChips = (items) => items.map(a => {
         const atk = a.atk || '';
         const dado = a.dado && a.dado !== '—' ? a.dado : (a._custom ? '' : (extractDiceFromDesc(a.desc) || ''));
         const diceDisplay = atk ? `${atk}${dado ? ' / ' + dado : ''}` : dado;
-        const isUsed = currentEntry?.actions.some(x => x.nombre === a.nombre) || false;
         const safeName = a.nombre.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
         const safeDice = diceDisplay.replace(/'/g, "\\'");
         const safeAtk = atk.replace(/'/g, "\\'");
@@ -2928,9 +2930,16 @@ function renderActivePanel(targetEl, forcePIdx) {
             ? '<small class="demonic-bonus">+1d8 Necr.</small>' : '';
         const removeBtn = a._custom
             ? `<button class="chip-remove-btn" onclick="removePermanentCustomAction('${p.id}','${safeName}')" title="Eliminar acción">✕</button>` : '';
+        // Player mode: highlight if assigned in planner
+        const isUsed = playerMode
+            ? ['accion_plan','adicional_plan','reaccion_plan'].some(k => currentEntry?.slots?.[k]?.nombre === a.nombre)
+            : (currentEntry?.actions.some(x => x.nombre === a.nombre) || false);
+        const chipOnclick = playerMode
+            ? `selectPlannerAction('${p.id}','${safeName}','${safeAtk}','${safeDado}')`
+            : `toggleCombatAction('${p.id}','${safeName}','${safeDice}')`;
         return `<div class="combat-chip-wrapper">
             <button class="combat-chip${isUsed ? ' used' : ''}${a._custom ? ' custom-action' : ''}"
-                    onclick="toggleCombatAction('${p.id}','${safeName}','${safeDice}')">
+                    onclick="${chipOnclick}">
                 ${a.nombre}${diceDisplay ? `<small>${diceDisplay}</small>` : ''}${demonicBonus}
             </button>
             ${a.desc && !a._custom ? `<button class="chip-info-btn" onclick="showActionDetail('${safeName}','${safeAtk}','${safeDado}','${safeDesc}')" title="Ver descripción">ℹ️</button>` : ''}
@@ -2946,6 +2955,51 @@ function renderActivePanel(targetEl, forcePIdx) {
             <div class="combat-slot-header"><span>⚔️ Acción (Segunda Acción)</span></div>
             ${accionItems.length ? `<div class="combat-chips">${renderChips(accionItems)}</div>` : `<div style="font-size:12px;color:var(--text-muted);padding:4px 0">Sin acciones disponibles</div>`}
         </div>`;
+    } else if (playerMode) {
+        // ── PLANIFICADOR DE TURNO (player mode) ──────────────────────────────
+        const PSLOTS = [
+            { key: 'accion',    icon: '⚔️', label: 'ACCIÓN' },
+            { key: 'adicional', icon: '⚡', label: 'ADICIONAL' },
+            { key: 'reaccion',  icon: '🛡️', label: 'REACCIÓN' },
+        ];
+        const plannerSlotsHTML = PSLOTS.map(s => {
+            const plan = currentEntry?.slots?.[s.key + '_plan'];
+            return `<div class="planner-slot${plan ? ' filled' : ''}">
+                <span class="planner-slot-label">${s.icon} ${s.label}:</span>
+                ${plan
+                    ? `<span class="planner-slot-action">${plan.nombre}</span>
+                       <button class="planner-slot-remove" onclick="removePlannerSlot('${p.id}','${s.key}')">✕</button>`
+                    : `<span class="planner-slot-empty">— selecciona abajo</span>`}
+            </div>`;
+        }).join('');
+        const diceRows = PSLOTS.map(s => {
+            const plan = currentEntry?.slots?.[s.key + '_plan'];
+            if (!plan) return '';
+            const atkBadge = plan.atk ? `<span class="planner-dice-badge atk">ATK ${plan.atk}</span>` : '';
+            const dmgBadge = plan.dado ? `<span class="planner-dice-badge dmg">DMG ${plan.dado}</span>` : '';
+            return `<div class="planner-dice-row">
+                <span class="planner-dice-name">${plan.nombre}</span>
+                <div class="planner-dice-badges">${atkBadge}${dmgBadge}</div>
+            </div>`;
+        }).filter(Boolean).join('');
+        const hasDice = PSLOTS.some(s => currentEntry?.slots?.[s.key + '_plan']);
+        const chipSections = SLOTS.map(slot => {
+            const items = allItems.filter(a => inferActionType(a) === slot.tipo);
+            if (!items.length) return '';
+            return `<div class="combat-slot-section">
+                <div class="combat-slot-header"><span>${slot.icon} ${slot.label}</span></div>
+                <div class="combat-chips">${renderChips(items)}</div>
+            </div>`;
+        }).join('');
+        slotSections = `
+        <div class="turn-planner">
+            <div class="turn-planner-slots">${plannerSlotsHTML}</div>
+            <div class="turn-planner-dice">
+                <div class="planner-dice-title">🎲 DADOS DEL TURNO</div>
+                ${hasDice ? diceRows : '<div class="planner-dice-empty">Selecciona acciones abajo</div>'}
+            </div>
+        </div>
+        <div class="combat-actions-chips-section">${chipSections}</div>`;
     } else {
         slotSections = SLOTS.map(slot => {
             const isSlotUsed = (currentEntry?.slots?.[slot.key]) ||
@@ -3162,6 +3216,42 @@ function toggleCombatAction(participantId, nombre, dice) {
     }
     saveCombatState();
     renderActivePanel();
+    renderCombatLog();
+}
+
+function selectPlannerAction(participantId, nombre, atk, dado) {
+    const p = combatState.participants.find(x => x.id === participantId);
+    if (!p) return;
+    const entry = getCurrentLogEntry();
+    if (!entry) return;
+    const allItems = [...(p.charData?.combateExtra || []), ...(p.charData?.conjuros || []), ...(p.customActions || [])];
+    const actionObj = allItems.find(a => a.nombre === nombre);
+    const tipo = actionObj ? inferActionType(actionObj) : 'accion';
+    const planKey = tipo + '_plan';
+    if (!entry.slots) entry.slots = {};
+    if (entry.slots[planKey]?.nombre === nombre) {
+        entry.slots[planKey] = null;
+        entry.actions = entry.actions.filter(a => a.nombre !== nombre);
+    } else {
+        entry.slots[planKey] = { nombre, atk: atk || '', dado: dado || '' };
+        if (!entry.actions.some(a => a.nombre === nombre))
+            entry.actions.push({ nombre, dice: atk ? `${atk}${dado ? '/' + dado : ''}` : dado });
+    }
+    saveCombatState();
+    renderActivePanel(document.getElementById('playerCombatPanel'), 0);
+    renderCombatLog();
+}
+
+function removePlannerSlot(participantId, slotKey) {
+    const entry = getCurrentLogEntry();
+    if (!entry) return;
+    const plan = entry.slots?.[slotKey + '_plan'];
+    if (plan) {
+        entry.actions = entry.actions.filter(a => a.nombre !== plan.nombre);
+        entry.slots[slotKey + '_plan'] = null;
+    }
+    saveCombatState();
+    renderActivePanel(document.getElementById('playerCombatPanel'), 0);
     renderCombatLog();
 }
 
