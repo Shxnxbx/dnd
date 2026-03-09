@@ -4164,15 +4164,23 @@ body.role-jugador .master-only { display: none !important; }
    FEATURE 17 — Player Mode: Personal Turn Manager
    ============================================ */
 
-/* Player view overlay (positioned over master layout) */
-.combat-manager-section { position: relative; }
+/* Master layout wrapper — flex column filling the manager section */
+.combat-master-layout {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    overflow: hidden;
+    min-height: 0;
+}
+
+/* Player view — same flex child, replaces master layout */
 .player-combat-view {
-    position: absolute;
-    inset: 0;
-    z-index: 20;
-    background: var(--bg-dark);
+    flex: 1;
+    display: flex;    /* overridden to none via inline style when hidden */
     flex-direction: column;
     overflow: hidden;
+    min-height: 0;
+    background: var(--bg-dark);
 }
 
 /* Waiting screen */

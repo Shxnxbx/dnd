@@ -2540,13 +2540,18 @@ function setParticipantInitiative(id, value) {
 
 // ---- Combat Manager ----
 function renderCombatManager() {
+    const masterLayout = document.getElementById('combatMasterLayout');
+    const playerView   = document.getElementById('playerCombatView');
+
     if (!isMaster()) {
-        _renderPlayerCombatLayout();
+        if (masterLayout) masterLayout.style.display = 'none';
+        _renderPlayerCombatLayout(playerView);
         return;
     }
-    // Hide player view when master is active
-    const pv = document.getElementById('playerCombatView');
-    if (pv) pv.style.display = 'none';
+
+    // Master mode: show master layout, hide player view
+    if (masterLayout) masterLayout.style.display = 'flex';
+    if (playerView)   playerView.style.display   = 'none';
 
     const roundEl = document.getElementById('combatRoundBadge');
     if (roundEl) roundEl.textContent = `Ronda ${combatState.round}`;
@@ -2556,9 +2561,13 @@ function renderCombatManager() {
 }
 
 // ---- Player Combat Layout (role=jugador) ----
-function _renderPlayerCombatLayout() {
-    const view = document.getElementById('playerCombatView');
+function _renderPlayerCombatLayout(view) {
+    if (!view) view = document.getElementById('playerCombatView');
     if (!view) return;
+
+    // Always hide master layout in player mode
+    const masterLayout = document.getElementById('combatMasterLayout');
+    if (masterLayout) masterLayout.style.display = 'none';
 
     const p = combatState.participants[combatState.currentIndex];
     if (!p) { view.style.display = 'none'; return; }
