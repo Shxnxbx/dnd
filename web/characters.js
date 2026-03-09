@@ -2,7 +2,7 @@ window.characterData = {
     "Vel": {
         "id": "Vel",
         "tipo": "jugador",
-        "extraAttack": true,
+        "segundaAccion": true,
         "nombre": "Vel'Rhazal Vardros",
         "raza": "Humano Demonio",
         "clase": "Brujo (Hexblade)",
@@ -374,7 +374,7 @@ window.characterData = {
     "Asthor": {
         "id": "Asthor",
         "tipo": "jugador",
-        "extraAttack": true,
+        "segundaAccion": true,
         "nombre": "Asthor, Martillo Argento",
         "raza": "Enano",
         "clase": "Paladín",

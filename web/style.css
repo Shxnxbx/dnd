@@ -3857,11 +3857,11 @@ body.role-jugador .master-only { display: none !important; }
     margin-top: 4px;
 }
 
-/* --- Extra attack mini-turn panel --- */
-.combat-active-panel.extra-attack-active {
+/* --- Segunda Acción mini-turn panel --- */
+.combat-active-panel.segunda-accion-active {
     border-top: 3px solid #8b6fff;
 }
-.extra-attack-header {
+.segunda-accion-header {
     background: rgba(139,111,255,0.12);
     border: 1px solid rgba(139,111,255,0.3);
     border-radius: 10px;
