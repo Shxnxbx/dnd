@@ -2817,54 +2817,7 @@ function renderActivePanel(targetEl, forcePIdx) {
 
     // ─── ROLE GATES — skipped when forcePIdx is set (player rendering own sheet) ──
     if (forcePIdx === undefined && isMaster()) {
-        // Master: locked view when it's a jugador's turn (player manages their own)
-        if (p.tipo === 'jugador') {
-            const hpPct0 = p.hp.max > 0 ? Math.max(0, (p.hp.current / p.hp.max) * 100) : 0;
-            const hpClass0 = hpPct0 <= 0 ? 'hp-dead' : hpPct0 <= 25 ? 'hp-critical' : hpPct0 <= 50 ? 'hp-low' : '';
-            const sliderFill0 = hpPct0;
-            const condHTML0 = CONDITIONS.map(c => {
-                const isActive = p.conditions.includes(c.id);
-                return `<button class="combat-cond-btn${isActive ? ' active' : ''}"
-                                onclick="toggleParticipantCondition('${p.id}','${c.id}')"
-                                title="${c.title}">${c.label} ${c.title}</button>`;
-            }).join('');
-            panel.className = 'combat-active-panel master-locked-player';
-            panel.innerHTML = `
-                <div class="master-locked-header">
-                    🎮 Turno del jugador
-                    <span class="master-locked-name">${p.name.split(' ')[0]}</span>
-                </div>
-                <div class="master-locked-body">
-                    <div class="master-locked-portrait">
-                        ${p.charData?.imagen ? `<img src="${p.charData.imagen}" onerror="this.style.display='none'">` : '<div class="portrait-placeholder"></div>'}
-                    </div>
-                    <div class="master-locked-info">
-                        <div class="master-locked-charname">${p.name}</div>
-                        ${p.charData ? `<div class="master-locked-meta">${p.charData.clase} · Nv ${p.charData.nivel}</div>` : ''}
-                        <div class="master-locked-stats">
-                            <span class="master-locked-stat">🛡️ CA ${p.ac}</span>
-                            ${p.speed ? `<span class="master-locked-stat">💨 ${p.speed}</span>` : ''}
-                        </div>
-                    </div>
-                </div>
-                <div class="combat-vital-block ${hpClass0}" id="activeHpBlock" style="margin:10px 0">
-                    <div class="combat-vital-label">❤️ Puntos de Golpe</div>
-                    <div class="combat-vital-value">
-                        <span id="activeHpDisplay">${p.hp.current}</span>
-                        <span style="font-size:16px;color:var(--text-muted)"> / ${p.hp.max}</span>
-                    </div>
-                    <input type="range" class="combat-hp-slider"
-                           min="0" max="${p.hp.max}" value="${p.hp.current}"
-                           style="--fill-pct:${sliderFill0}%"
-                           oninput="setParticipantHp('${p.id}', parseInt(this.value))">
-                </div>
-                <div class="combat-conds-bar">${condHTML0}</div>
-                <div class="master-locked-message">
-                    <span>El jugador gestiona este turno desde su dispositivo.</span>
-                    <span style="display:block;margin-top:4px;color:var(--text-muted);font-size:11px">Puedes avanzar cuando el jugador termine su turno.</span>
-                </div>`;
-            return;
-        }
+        // Master always has full control — no lock for any participant type
     } else if (forcePIdx === undefined) {
         // Jugador: waiting panel when it's not their own character's turn
         const isMyTurn = gameRole.characterId && p.id === gameRole.characterId;
@@ -3100,6 +3053,33 @@ function renderActivePanel(targetEl, forcePIdx) {
                 : '<span style="color:var(--text-muted);font-size:12px">Inactivo</span>'}
         </button>` : '';
 
+    // Attack target panel (master only)
+    let attackTargetPanelHTML = '';
+    if (isMaster() && !isSegundaAccion && forcePIdx === undefined) {
+        const targets = combatState.participants.filter((_, i) => i !== idx);
+        if (targets.length > 0) {
+            const targetRows = targets.map(t => {
+                const hpPct = t.hp.max > 0 ? Math.round(t.hp.current / t.hp.max * 100) : 0;
+                const hpColor = hpPct <= 0 ? '#555' : hpPct <= 25 ? '#ff4444' : hpPct <= 50 ? '#ffaa00' : '#4caf50';
+                const tipoIcon = t.tipo === 'enemigo' ? '💀' : t.tipo === 'aliado' ? '💙' : '🎮';
+                return `<div class="attack-target-row">
+                    <div class="attack-target-info">
+                        <span class="attack-target-icon">${tipoIcon}</span>
+                        <span class="attack-target-name">${t.name.split(' ')[0]}</span>
+                        <span class="attack-target-hp" style="color:${hpColor}">${t.hp.current}/${t.hp.max} ❤️</span>
+                    </div>
+                    <input type="number" class="attack-dmg-input" id="dmg_${t.id}"
+                           placeholder="0 dmg" min="0" inputmode="numeric">
+                </div>`;
+            }).join('');
+            attackTargetPanelHTML = `<div class="attack-target-panel">
+                <div class="attack-target-title">⚔️ Aplicar daño</div>
+                <div class="attack-target-list">${targetRows}</div>
+                <button class="btn-apply-damage" onclick="applyAttackDamage('${p.id}')">💥 Aplicar Daño</button>
+            </div>`;
+        }
+    }
+
     // HP slider fill percentage
     const sliderFillPct = p.hp.max > 0 ? Math.max(0, (p.hp.current / p.hp.max) * 100) : 0;
 
@@ -3145,6 +3125,7 @@ function renderActivePanel(targetEl, forcePIdx) {
         ${isSegundaAccion ? '' : sirvienteToggleHTML}
         ${isSegundaAccion ? '' : `<div class="combat-conds-bar">${condHTML}</div>`}
         ${actionChipsHTML}
+        ${attackTargetPanelHTML}
         ${isSegundaAccion ? `<button class="skip-extra-btn" onclick="skipSegundaAccion()">⏭ Saltar Segunda Acción</button>` : ''}
         <div class="combat-recorded-section">
             <div class="combat-recorded-title">Registrado este turno:</div>
@@ -3220,6 +3201,39 @@ function toggleCombatAction(participantId, nombre, dice) {
     saveCombatState();
     renderActivePanel();
     renderCombatLog();
+}
+
+function applyAttackDamage(attackerId) {
+    const inputs = document.querySelectorAll('.attack-dmg-input');
+    let applied = 0;
+    const log = [];
+    inputs.forEach(input => {
+        const targetId = input.id.replace('dmg_', '');
+        const damage = parseInt(input.value) || 0;
+        if (damage > 0) {
+            const target = combatState.participants.find(p => p.id === targetId);
+            if (target) {
+                const prevHp = target.hp.current;
+                target.hp.current = Math.max(0, target.hp.current - damage);
+                if (prevHp > target.hp.current && target.conditions.includes('concentracion')) {
+                    const cd = Math.max(10, Math.floor(damage / 2));
+                    showNotification(`🧠 ${target.name.split(' ')[0]}: Concentración CD ${cd}`, 3500);
+                }
+                log.push(`${target.name.split(' ')[0]} −${damage} PG`);
+                applied++;
+                input.value = '';
+            }
+        }
+    });
+    if (applied > 0) {
+        saveCombatState();
+        renderTurnQueue();
+        renderActivePanel();
+        renderCombatLog();
+        showNotification(`💥 ${log.join(' · ')}`, 3000);
+    } else {
+        showNotification('Introduce al menos 1 de daño a un objetivo', 1800);
+    }
 }
 
 function selectPlannerAction(participantId, nombre, atk, dado, tipoDano) {
