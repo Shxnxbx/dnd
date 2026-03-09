@@ -793,7 +793,7 @@ const combatState = {
     isActive: false,
     log: [],               // array of log entry objects
     nextLogId: 0,
-    extraAttackTurn: false, // true when in extra attack mini-turn
+    segundaAccionTurn: false, // true when in segunda acción mini-turn
 };
 // participant object: { id, name, initiative, hp:{current,max}, ac, conditions:[], note:'', charData }
 // log entry: { id, round, participantId, participantName, actions:[{nombre,dice}], note:'', isCurrent:bool }
@@ -2407,7 +2407,7 @@ function renderTurnQueue() {
             <div class="tqi-hp-bar"><div class="tqi-hp-fill" style="width:${hpPct}%;background:${hpColor}"></div></div>
             <div class="tqi-hp-text">${showHp ? `${p.hp.current}/${p.hp.max}` : '? / ?'}</div>
             ${condIcons}
-            ${isCurrentParticipant && combatState.extraAttackTurn ? '<div class="tqi-extra-badge">+ATQ</div>' : ''}
+            ${isCurrentParticipant && combatState.segundaAccionTurn ? '<div class="tqi-extra-badge">+2ª</div>' : ''}
         </div>`;
     }).join('');
     setTimeout(() => {
@@ -2563,7 +2563,7 @@ function renderActivePanel() {
     const panel = document.getElementById('combatActivePanel');
     if (!p || !panel) return;
 
-    const isExtraAttack = combatState.extraAttackTurn;
+    const isSegundaAccion = combatState.segundaAccionTurn;
 
     // ─── ROLE GATES ───────────────────────────────────────────────────────────
     if (isMaster()) {
@@ -2651,7 +2651,7 @@ function renderActivePanel() {
         ? `<div class="concentration-banner">🧠 Concentración activa — al recibir daño, tira Constitución</div>`
         : '';
 
-    // Action slots (3 slots — Ataque Extra is now its own consecutive mini-turn)
+    // Action slots (3 slots — Segunda Acción is now its own consecutive mini-turn)
     let actionChipsHTML = '';
     const SLOTS = [
         { key: 'accion',    icon: '⚔️',  label: 'Acción',          tipo: 'accion'    },
@@ -2689,13 +2689,13 @@ function renderActivePanel() {
         </div>`;
     }).join('');
 
-    // Render slot sections or extra-attack-only view
+    // Render slot sections or segunda-acción-only view
     let slotSections;
-    if (isExtraAttack) {
-        const weaponItems = allItems.filter(a => inferActionType(a) === 'accion' && a.atk && a.atk !== '—');
+    if (isSegundaAccion) {
+        const accionItems = allItems.filter(a => inferActionType(a) === 'accion');
         slotSections = `<div class="combat-slot-section">
-            <div class="combat-slot-header"><span>⚔️ Ataque (Ataque Extra)</span></div>
-            ${weaponItems.length ? `<div class="combat-chips">${renderChips(weaponItems)}</div>` : `<div style="font-size:12px;color:var(--text-muted);padding:4px 0">Sin ataques disponibles</div>`}
+            <div class="combat-slot-header"><span>⚔️ Acción (Segunda Acción)</span></div>
+            ${accionItems.length ? `<div class="combat-chips">${renderChips(accionItems)}</div>` : `<div style="font-size:12px;color:var(--text-muted);padding:4px 0">Sin acciones disponibles</div>`}
         </div>`;
     } else {
         slotSections = SLOTS.map(slot => {
@@ -2716,8 +2716,8 @@ function renderActivePanel() {
         }).join('');
     }
 
-    // Form to add persistent custom actions (not shown in extra attack mode)
-    const addCustomActionForm = isExtraAttack ? '' : `
+    // Form to add persistent custom actions (not shown in segunda acción mode)
+    const addCustomActionForm = isSegundaAccion ? '' : `
         <details class="add-custom-action-details">
             <summary>✏️ Añadir acción personalizada…</summary>
             <div class="add-custom-action-form">
@@ -2732,9 +2732,9 @@ function renderActivePanel() {
             </div>
         </details>`;
 
-    // Invocaciones section for Zero (not shown in extra attack mode)
+    // Invocaciones section for Zero (not shown in segunda acción mode)
     let invocacionesHTML = '';
-    if (!isExtraAttack && p.id === 'Zero' && p.charData?.invocaciones) {
+    if (!isSegundaAccion && p.id === 'Zero' && p.charData?.invocaciones) {
         const invCards = p.charData.invocaciones.map(inv => `
             <div class="invocation-card">
                 <div>
@@ -2784,19 +2784,29 @@ function renderActivePanel() {
                 : '<span style="color:var(--text-muted);font-size:12px">Inactiva</span>'}
         </button>` : '';
 
+    // Sirviente Invisible toggle (Vel only, not during segunda acción mini-turn)
+    const sirvienteToggleHTML = (p.id === 'Vel' && !isSegundaAccion) ? `
+        <button class="combat-demonic-toggle${p.sirvienteActive ? ' active' : ''}"
+                onclick="toggleSirvienteInvisible('Vel')">
+            👻 Sirviente Invisible
+            ${p.sirvienteActive
+                ? '<span class="demonic-badge">ACTIVO · CA ' + p.ac + '</span>'
+                : '<span style="color:var(--text-muted);font-size:12px">Inactivo</span>'}
+        </button>` : '';
+
     // HP slider fill percentage
     const sliderFillPct = p.hp.max > 0 ? Math.max(0, (p.hp.current / p.hp.max) * 100) : 0;
 
-    const panelClass = `combat-active-panel${p.demonicForm ? ' demonic-active' : ''}${isExtraAttack ? ' extra-attack-active' : ''}`;
+    const panelClass = `combat-active-panel${p.demonicForm ? ' demonic-active' : ''}${isSegundaAccion ? ' segunda-accion-active' : ''}`;
     panel.className = panelClass;
 
-    const extraAttackHeaderHTML = isExtraAttack
-        ? `<div class="extra-attack-header">🗡️ ATAQUE EXTRA — ${p.name.split(' ')[0]}</div>`
+    const segundaAccionHeaderHTML = isSegundaAccion
+        ? `<div class="segunda-accion-header">⚔️ SEGUNDA ACCIÓN — ${p.name.split(' ')[0]}</div>`
         : '';
-    const displayName = isExtraAttack ? `${p.name} — Ataque Extra` : p.name;
+    const displayName = isSegundaAccion ? `${p.name} — Segunda Acción` : p.name;
 
     panel.innerHTML = `
-        ${extraAttackHeaderHTML}
+        ${segundaAccionHeaderHTML}
         <div class="combat-active-header">
             <div class="combat-active-portrait">
                 ${p.charData?.imagen ? `<img src="${p.charData.imagen}" onerror="this.style.display='none'">` : '<div style="width:64px;height:64px;border-radius:50%;background:rgba(255,255,255,0.05);border:2px solid var(--border-color);"></div>'}
@@ -2824,16 +2834,17 @@ function renderActivePanel() {
                 ${p.speed ? `<div style="font-size:12px;color:var(--text-muted);margin-top:4px">💨 ${p.speed}</div>` : ''}
             </div>
         </div>
-        ${isExtraAttack ? '' : concentrationBanner}
-        ${isExtraAttack ? '' : demonicToggleHTML}
-        ${isExtraAttack ? '' : `<div class="combat-conds-bar">${condHTML}</div>`}
+        ${isSegundaAccion ? '' : concentrationBanner}
+        ${isSegundaAccion ? '' : demonicToggleHTML}
+        ${isSegundaAccion ? '' : sirvienteToggleHTML}
+        ${isSegundaAccion ? '' : `<div class="combat-conds-bar">${condHTML}</div>`}
         ${actionChipsHTML}
-        ${isExtraAttack ? `<button class="skip-extra-btn" onclick="skipExtraAttack()">⏭ Saltar Ataque Extra</button>` : ''}
+        ${isSegundaAccion ? `<button class="skip-extra-btn" onclick="skipSegundaAccion()">⏭ Saltar Segunda Acción</button>` : ''}
         <div class="combat-recorded-section">
             <div class="combat-recorded-title">Registrado este turno:</div>
             <div id="combatRecordedList">${recordedHTML}</div>
         </div>
-        ${isExtraAttack ? '' : `<div class="combat-notes-section">
+        ${isSegundaAccion ? '' : `<div class="combat-notes-section">
             <textarea class="combat-notes-input" placeholder="Notas del turno..."
                       oninput="setCombatTurnNote('${p.id}',this.value)">${currentEntry?.note || ''}</textarea>
         </div>`}
@@ -2853,11 +2864,11 @@ function createCurrentTurnEntry() {
         slots: { accion: false, extraAtaque: false, adicional: false, reaccion: false },
         note: '',
         isCurrent: true,
-        isExtraAttack: combatState.extraAttackTurn || false,
+        isSegundaAccion: combatState.segundaAccionTurn || false,
         snapshot: {
             currentIndex: combatState.currentIndex,
             round: combatState.round,
-            extraAttackTurn: combatState.extraAttackTurn || false,
+            segundaAccionTurn: combatState.segundaAccionTurn || false,
             participants: combatState.participants.map(part => ({
                 id: part.id,
                 hp: { ...part.hp },
@@ -3015,7 +3026,7 @@ function renderCombatLog() {
         const p = combatState.participants.find(x => x.id === entry.participantId);
         const actionsHTML = entry.actions.length
             ? entry.actions.map(a => `<div class="log-action-item">
-                <div>✓ ${a.nombre}${a.dice && !a.rollText ? ` (${a.dice})` : ''}${entry.isExtraAttack ? ' <span class="log-extra-badge">+ATQ</span>' : ''}</div>
+                <div>✓ ${a.nombre}${a.dice && !a.rollText ? ` (${a.dice})` : ''}${entry.isSegundaAccion ? ' <span class="log-extra-badge">+2ª</span>' : ''}</div>
                 ${a.rollText ? `<div class="combat-roll-result">${renderRollText(a.rollText)}</div>` : ''}
                 ${a.narratorText ? `<div class="combat-narrator-text">${a.narratorText}</div>` : ''}
             </div>`).join('')
@@ -3086,8 +3097,8 @@ function nextCombatTurn() {
     }
 
     const current = getCurrentLogEntry();
-    // Extra attack mini-turn: no warning needed, can always pass
-    if (combatState.extraAttackTurn) { _doNextTurn(); return; }
+    // Segunda acción mini-turn: no warning needed, can always pass
+    if (combatState.segundaAccionTurn) { _doNextTurn(); return; }
     if (!current?.actions.length && !current?.note?.trim()) {
         showNextTurnWarning();
         return;
@@ -3123,20 +3134,20 @@ function _doNextTurn() {
     const current = getCurrentLogEntry();
     if (current) current.isCurrent = false;
 
-    if (combatState.extraAttackTurn) {
-        // Finishing the extra attack mini-turn → advance to next participant
-        combatState.extraAttackTurn = false;
+    if (combatState.segundaAccionTurn) {
+        // Finishing the segunda acción mini-turn → advance to next participant
+        combatState.segundaAccionTurn = false;
         combatState.currentIndex++;
         if (combatState.currentIndex >= combatState.participants.length) {
             combatState.currentIndex = 0;
             combatState.round++;
         }
     } else {
-        // Check if current participant has extraAttack
+        // Check if current participant has segundaAccion
         const currP = combatState.participants[combatState.currentIndex];
-        if (currP?.charData?.extraAttack) {
-            combatState.extraAttackTurn = true;
-            // Stay on same currentIndex (same participant, extra attack mini-turn)
+        if (currP?.charData?.segundaAccion) {
+            combatState.segundaAccionTurn = true;
+            // Stay on same currentIndex (same participant, segunda acción mini-turn)
         } else {
             combatState.currentIndex++;
             if (combatState.currentIndex >= combatState.participants.length) {
@@ -3150,8 +3161,8 @@ function _doNextTurn() {
     renderCombatManager();
 }
 
-function skipExtraAttack() {
-    combatState.extraAttackTurn = false;
+function skipSegundaAccion() {
+    combatState.segundaAccionTurn = false;
     const current = getCurrentLogEntry();
     if (current) current.isCurrent = false;
     combatState.currentIndex++;
@@ -3183,7 +3194,7 @@ function previousCombatTurn() {
     if (snap) {
         combatState.currentIndex = snap.currentIndex;
         combatState.round = snap.round;
-        combatState.extraAttackTurn = snap.extraAttackTurn || false;
+        combatState.segundaAccionTurn = snap.segundaAccionTurn || false;
         // Restore participant HP, conditions, demonicForm, ac, speed
         snap.participants.forEach(snapP => {
             const p = combatState.participants.find(x => x.id === snapP.id);
@@ -3214,6 +3225,99 @@ function toggleDemonicFormInCombat(participantId) {
         p.ac    = p.baseAc;
         p.speed = p.baseSpeed;
         showNotification('💔 Forma Demoníaca desactivada', 2000);
+    }
+    saveCombatState();
+    renderCombatManager();
+}
+
+// ---- Sirviente Invisible (Vel only) ----
+function buildSirvienteCharData(ac) {
+    return {
+        nombre: 'Sirviente Invisible',
+        clase: 'Familiar',
+        nivel: 1,
+        tipo: 'aliado',
+        imagen: null,
+        combateExtra: [
+            {
+                nombre: 'Hacha de mano',
+                tipo: 'accion',
+                atk: '+7',
+                dado: '1d8+5',
+                desc: 'Daño divino. Siempre ataca con ventaja (invisible).'
+            },
+            {
+                nombre: 'Hacha de mano',
+                tipo: 'adicional',
+                atk: '+5',
+                dado: '1d8+5',
+                desc: 'Acción adicional. Daño divino.'
+            },
+            {
+                nombre: 'Daga',
+                tipo: 'accion',
+                atk: '+7',
+                dado: '1d4',
+                desc: 'El próximo aliado ataca con ventaja contra ese objetivo.'
+            },
+            {
+                nombre: 'Ventaja / Desventaja',
+                tipo: 'accion',
+                atk: '',
+                dado: '',
+                desc: 'Genera ventaja o desventaja en un objetivo (sin tirada).'
+            }
+        ],
+        conjuros: []
+    };
+}
+
+function toggleSirvienteInvisible(velParticipantId) {
+    const velP = combatState.participants.find(x => x.id === velParticipantId);
+    if (!velP) return;
+
+    const sirvienteId = 'sirviente_invisible_vel';
+    const sirvienteIdx = combatState.participants.findIndex(x => x.id === sirvienteId);
+
+    if (sirvienteIdx !== -1) {
+        // DEACTIVATE: Remove Sirviente from initiative
+        if (combatState.currentIndex > sirvienteIdx) {
+            combatState.currentIndex--;
+        } else if (combatState.currentIndex === sirvienteIdx) {
+            // We're on Sirviente's turn — jump back to Vel
+            combatState.currentIndex = combatState.participants.findIndex(x => x.id === velParticipantId);
+        }
+        combatState.participants.splice(sirvienteIdx, 1);
+        velP.sirvienteActive = false;
+        showNotification('👻 Sirviente Invisible retirado del combate', 2000);
+    } else {
+        // ACTIVATE: Insert Sirviente right after Vel in initiative order
+        const velIdx = combatState.participants.findIndex(x => x.id === velParticipantId);
+        const charData = buildSirvienteCharData(velP.ac);
+        const sirviente = {
+            id: sirvienteId,
+            name: 'Sirviente Invisible',
+            initiative: velP.initiative,
+            hp: { current: 1, max: 1 },
+            ac: velP.ac,
+            baseAc: velP.ac,
+            speed: '30ft',
+            baseSpeed: '30ft',
+            conditions: [],
+            note: '',
+            charData,
+            demonicForm: false,
+            tipo: 'aliado',
+            customActions: [],
+            _isSirvienteInvisible: true,
+        };
+        combatState.participants.splice(velIdx + 1, 0, sirviente);
+        // Shift currentIndex if we inserted before it
+        if (combatState.currentIndex > velIdx) {
+            combatState.currentIndex++;
+        }
+        velP.sirvienteActive = true;
+        showNotification('👻 Sirviente Invisible invocado — CA ' + velP.ac, 2500);
     }
     saveCombatState();
     renderCombatManager();
@@ -3400,7 +3504,11 @@ function loadSavedCombatIfAny() {
         const saved = JSON.parse(raw);
         if (!saved.isActive || !saved.participants?.length) return;
         saved.participants.forEach(p => {
-            p.charData = window.characterData[p.id] || null;
+            if (p._isSirvienteInvisible) {
+                p.charData = buildSirvienteCharData(p.ac); // rebuild transient charData
+            } else {
+                p.charData = window.characterData[p.id] || null;
+            }
             if (!p.customActions) p.customActions = []; // migration for old saves
         });
         Object.assign(combatState, saved);
@@ -3439,7 +3547,7 @@ function discardSavedCombat() {
     document.getElementById('combatResumeOverlay')?.remove();
     Object.assign(combatState, {
         isActive: false, participants: [], selectedIds: [],
-        log: [], round: 1, currentIndex: 0, nextLogId: 0, extraAttackTurn: false,
+        log: [], round: 1, currentIndex: 0, nextLogId: 0, segundaAccionTurn: false,
     });
     clearSavedCombat();
 }
