@@ -2164,6 +2164,7 @@ function goToCombatInitiative() {
             charData: char,
             demonicForm: false,
             tipo: char.tipo || 'jugador',
+            customActions: [],
         };
     });
     setView('combatInit');
@@ -2528,6 +2529,35 @@ function toggleSlotManual(participantId, slotKey) {
     renderActivePanel();
 }
 
+function addPermanentCustomAction(participantId) {
+    const p = combatState.participants.find(x => x.id === participantId);
+    if (!p) return;
+    const nombre = document.getElementById('newCustomActionName')?.value?.trim();
+    if (!nombre) { showNotification('⚠️ Introduce un nombre para la acción', 2000); return; }
+    const tipo = document.getElementById('newCustomActionTipo')?.value || 'accion';
+    const dado = document.getElementById('newCustomActionDado')?.value?.trim() || '';
+    if (!p.customActions) p.customActions = [];
+    // Prevent duplicates
+    if (p.customActions.find(a => a.nombre === nombre)) {
+        showNotification('⚠️ Ya existe una acción con ese nombre', 2000); return;
+    }
+    p.customActions.push({ nombre, tipo, dado, atk: '', desc: '' });
+    saveCombatState();
+    renderActivePanel();
+    showNotification(`✅ Acción "${nombre}" añadida`, 2000);
+}
+
+function removePermanentCustomAction(participantId, nombre) {
+    const p = combatState.participants.find(x => x.id === participantId);
+    if (!p || !p.customActions) return;
+    p.customActions = p.customActions.filter(a => a.nombre !== nombre);
+    // Also remove from current log entry if present
+    const entry = getCurrentLogEntry();
+    if (entry) entry.actions = entry.actions.filter(a => a.nombre !== nombre);
+    saveCombatState();
+    renderActivePanel();
+}
+
 function renderActivePanel() {
     const p = combatState.participants[combatState.currentIndex];
     const panel = document.getElementById('combatActivePanel');
@@ -2539,12 +2569,20 @@ function renderActivePanel() {
     if (!isMaster()) {
         if (p.tipo === 'enemigo') {
             panel.className = 'combat-active-panel';
-            panel.innerHTML = `<div class="waiting-panel">💀 Turno del enemigo<small>El Master gestiona este turno</small></div>`;
+            panel.innerHTML = `<div class="waiting-panel">
+                <span>💀 Turno del enemigo</span>
+                <small>El Master gestiona este turno</small>
+                <button class="btn-combat-secondary waiting-pass-btn" onclick="nextCombatTurn()">⏭ Pasar turno</button>
+            </div>`;
             return;
         }
         if (gameRole.characterId && p.id !== gameRole.characterId) {
             panel.className = 'combat-active-panel';
-            panel.innerHTML = `<div class="waiting-panel">⏳ Turno de ${p.name.split(' ')[0]}...<small>El Master gestiona este turno</small></div>`;
+            panel.innerHTML = `<div class="waiting-panel">
+                <span>⏳ Turno de ${p.name.split(' ')[0]}...</span>
+                <small>El Master gestiona este turno</small>
+                <button class="btn-combat-secondary waiting-pass-btn" onclick="nextCombatTurn()">⏭ Pasar turno</button>
+            </div>`;
             return;
         }
     }
@@ -2566,113 +2604,112 @@ function renderActivePanel() {
         ? `<div class="concentration-banner">🧠 Concentración activa — al recibir daño, tira Constitución</div>`
         : '';
 
-    // Action slots with 4 independent slots
+    // Action slots (3 slots — Ataque Extra is now its own consecutive mini-turn)
     let actionChipsHTML = '';
     const SLOTS = [
-        { key: 'accion',      icon: '⚔️',  label: 'Acción',           tipo: 'accion',    extraOnly: false },
-        { key: 'extraAtaque', icon: '🗡️',  label: 'Ataque Extra',      tipo: 'accion',    extraOnly: true  },
-        { key: 'adicional',   icon: '⚡',  label: 'Acción Adicional',  tipo: 'adicional', extraOnly: false },
-        { key: 'reaccion',    icon: '↩️',  label: 'Reacción',          tipo: 'reaccion',  extraOnly: false },
+        { key: 'accion',    icon: '⚔️',  label: 'Acción',          tipo: 'accion'    },
+        { key: 'adicional', icon: '⚡',  label: 'Acción Adicional', tipo: 'adicional' },
+        { key: 'reaccion',  icon: '↩️',  label: 'Reacción',         tipo: 'reaccion'  },
     ];
-    if (p.charData) {
-        const allItems = [...(p.charData.combateExtra || []), ...(p.charData.conjuros || [])];
+    // Build all available actions: charData + persistent custom actions
+    const baseItems = [...(p.charData?.combateExtra || []), ...(p.charData?.conjuros || [])];
+    const customItems = (p.customActions || []).map(a => ({ ...a, _custom: true }));
+    const allItems = [...baseItems, ...customItems];
 
-        // Helper to render chips for an item list
-        const renderChips = (items) => items.map(a => {
-            const atk = a.atk || '';
-            const dado = a.dado && a.dado !== '—' ? a.dado : (extractDiceFromDesc(a.desc) || '');
-            const diceDisplay = atk ? `${atk}${dado ? ' / ' + dado : ''}` : dado;
-            const isUsed = currentEntry?.actions.some(x => x.nombre === a.nombre) || false;
-            const safeName = a.nombre.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
-            const safeDice = diceDisplay.replace(/'/g, "\\'");
-            const safeAtk = atk.replace(/'/g, "\\'");
-            const safeDado = dado.replace(/'/g, "\\'");
-            const safeDesc = (a.desc || '').replace(/'/g, "\\'").replace(/"/g, '&quot;').replace(/\n/g, ' ');
-            const demonicBonus = (p.demonicForm && p.id === 'Vel' && atk)
-                ? '<small class="demonic-bonus">+1d8 Necr.</small>' : '';
-            return `<div class="combat-chip-wrapper">
-                <button class="combat-chip${isUsed ? ' used' : ''}"
-                        onclick="toggleCombatAction('${p.id}','${safeName}','${safeDice}')">
-                    ${a.nombre}${diceDisplay ? `<small>${diceDisplay}</small>` : ''}${demonicBonus}
-                </button>
-                ${(atk || dado) ? `<button class="chip-roll-btn" onclick="rollActionDice('${p.id}','${safeName}','${safeAtk}','${safeDado}')" title="Tirar dados">🎲</button>` : ''}
-                ${a.desc ? `<button class="chip-info-btn" onclick="showActionDetail('${safeName}','${safeAtk}','${safeDado}','${safeDesc}')" title="Ver descripción">ℹ️</button>` : ''}
+    // Helper to render action chips for any item list
+    const renderChips = (items) => items.map(a => {
+        const atk = a.atk || '';
+        const dado = a.dado && a.dado !== '—' ? a.dado : (a._custom ? '' : (extractDiceFromDesc(a.desc) || ''));
+        const diceDisplay = atk ? `${atk}${dado ? ' / ' + dado : ''}` : dado;
+        const isUsed = currentEntry?.actions.some(x => x.nombre === a.nombre) || false;
+        const safeName = a.nombre.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+        const safeDice = diceDisplay.replace(/'/g, "\\'");
+        const safeAtk = atk.replace(/'/g, "\\'");
+        const safeDado = dado.replace(/'/g, "\\'");
+        const safeDesc = (a.desc || '').replace(/'/g, "\\'").replace(/"/g, '&quot;').replace(/\n/g, ' ');
+        const demonicBonus = (p.demonicForm && p.id === 'Vel' && atk)
+            ? '<small class="demonic-bonus">+1d8 Necr.</small>' : '';
+        const removeBtn = a._custom
+            ? `<button class="chip-remove-btn" onclick="removePermanentCustomAction('${p.id}','${safeName}')" title="Eliminar acción">✕</button>` : '';
+        return `<div class="combat-chip-wrapper">
+            <button class="combat-chip${isUsed ? ' used' : ''}${a._custom ? ' custom-action' : ''}"
+                    onclick="toggleCombatAction('${p.id}','${safeName}','${safeDice}')">
+                ${a.nombre}${diceDisplay ? `<small>${diceDisplay}</small>` : ''}${demonicBonus}
+            </button>
+            ${(atk || dado) ? `<button class="chip-roll-btn" onclick="rollActionDice('${p.id}','${safeName}','${safeAtk}','${safeDado}')" title="Tirar dados">🎲</button>` : ''}
+            ${a.desc && !a._custom ? `<button class="chip-info-btn" onclick="showActionDetail('${safeName}','${safeAtk}','${safeDado}','${safeDesc}')" title="Ver descripción">ℹ️</button>` : ''}
+            ${removeBtn}
+        </div>`;
+    }).join('');
+
+    // Render slot sections or extra-attack-only view
+    let slotSections;
+    if (isExtraAttack) {
+        const weaponItems = allItems.filter(a => inferActionType(a) === 'accion' && a.atk && a.atk !== '—');
+        slotSections = `<div class="combat-slot-section">
+            <div class="combat-slot-header"><span>⚔️ Ataque (Ataque Extra)</span></div>
+            ${weaponItems.length ? `<div class="combat-chips">${renderChips(weaponItems)}</div>` : `<div style="font-size:12px;color:var(--text-muted);padding:4px 0">Sin ataques disponibles</div>`}
+        </div>`;
+    } else {
+        slotSections = SLOTS.map(slot => {
+            const isSlotUsed = (currentEntry?.slots?.[slot.key]) ||
+                currentEntry?.actions.some(a => inferActionType(a) === slot.tipo) || false;
+            const items = allItems.filter(a => inferActionType(a) === slot.tipo);
+            const chips = renderChips(items);
+            const slotUsedClass = isSlotUsed ? ' used' : '';
+            const btnClass = isSlotUsed ? 'used' : 'libre';
+            const btnLabel = isSlotUsed ? '✅ Usada' : '☐ Libre';
+            return `<div class="combat-slot-section${slotUsedClass}">
+                <div class="combat-slot-header">
+                    <span>${slot.icon} ${slot.label}</span>
+                    <button class="slot-toggle-btn ${btnClass}" onclick="toggleSlotManual('${p.id}','${slot.key}')">${btnLabel}</button>
+                </div>
+                ${items.length ? `<div class="combat-chips">${chips}</div>` : `<div style="font-size:12px;color:var(--text-muted);padding:4px 0">Sin acciones disponibles</div>`}
             </div>`;
         }).join('');
+    }
 
-        let slotSections;
-        if (isExtraAttack) {
-            // Extra attack mini-turn: only show weapon attacks
-            const weaponItems = allItems.filter(a => inferActionType(a) === 'accion' && a.atk && a.atk !== '—');
-            slotSections = `<div class="combat-slot-section">
-                <div class="combat-slot-header"><span>⚔️ Ataque (Ataque Extra)</span></div>
-                ${weaponItems.length ? `<div class="combat-chips">${renderChips(weaponItems)}</div>` : `<div style="font-size:12px;color:var(--text-muted);padding:4px 0">Sin ataques disponibles</div>`}
-            </div>`;
-        } else {
-            slotSections = SLOTS.map(slot => {
-                if (slot.extraOnly && !p.charData?.extraAttack) return '';
-                const isSlotUsed = (currentEntry?.slots?.[slot.key]) ||
-                    (slot.extraOnly
-                        ? false
-                        : currentEntry?.actions.some(a => inferActionType(a) === slot.tipo && !allItems.find(x => x.nombre === a.nombre)?.extraAttack) || false);
-                const items = slot.extraOnly
-                    ? allItems.filter(a => inferActionType(a) === 'accion' && a.atk && a.atk !== '—')
-                    : allItems.filter(a => inferActionType(a) === slot.tipo);
-                const chips = renderChips(items);
-                const slotUsedClass = isSlotUsed ? ' used' : '';
-                const btnClass = isSlotUsed ? 'used' : 'libre';
-                const btnLabel = isSlotUsed ? '✅ Usada' : '☐ Libre';
-                return `<div class="combat-slot-section${slotUsedClass}">
-                    <div class="combat-slot-header">
-                        <span>${slot.icon} ${slot.label}</span>
-                        <button class="slot-toggle-btn ${btnClass}" onclick="toggleSlotManual('${p.id}','${slot.key}')">${btnLabel}</button>
-                    </div>
-                    ${items.length ? `<div class="combat-chips">${chips}</div>` : `<div style="font-size:12px;color:var(--text-muted);padding:4px 0">Sin acciones disponibles</div>`}
-                </div>`;
-            }).filter(Boolean).join('');
-        }
-
-        // Invocaciones section for Zero (not shown in extra attack mode)
-        let invocacionesHTML = '';
-        if (!isExtraAttack && p.id === 'Zero' && p.charData?.invocaciones) {
-            const invCards = p.charData.invocaciones.map(inv => `
-                <div class="invocation-card">
-                    <div>
-                        <div class="invocation-name">${inv.emoji} ${inv.nombre}</div>
-                        <div class="invocation-stats">HP ${inv.hp} · CA ${inv.ca} · ${inv.velocidad}</div>
-                    </div>
-                    <div class="invocation-btns">
-                        <button onclick="showInvocationDetail('Zero','${inv.id}')">Ver stats</button>
-                        <button onclick="addInvocationToCombat('Zero','${inv.id}')">+ Al combate</button>
-                    </div>
-                </div>`).join('');
-            invocacionesHTML = `<div class="combat-invocations-section">
-                <div class="combat-actions-title">🔮 Invocaciones de Zero</div>
-                ${invCards}
-            </div>`;
-        }
-
-        actionChipsHTML = `<div class="combat-actions-section">
-            <div class="combat-actions-title">⚡ Acciones del turno</div>
-            ${slotSections}
-            ${isExtraAttack ? '' : `<div class="combat-custom-row">
-                <input type="text" id="customActionInput" class="combat-custom-input"
-                       placeholder="Acción personalizada..."
-                       onkeydown="if(event.key==='Enter') addCustomCombatAction('${p.id}')">
-                <button onclick="addCustomCombatAction('${p.id}')">+ Añadir</button>
-            </div>`}
-        </div>${invocacionesHTML}`;
-    } else {
-        actionChipsHTML = `<div class="combat-actions-section">
-            <div class="combat-actions-title">⚡ Acciones del turno</div>
-            <div class="combat-custom-row">
-                <input type="text" id="customActionInput" class="combat-custom-input"
-                       placeholder="Añadir acción..."
-                       onkeydown="if(event.key==='Enter') addCustomCombatAction('${p.id}')">
-                <button onclick="addCustomCombatAction('${p.id}')">+ Añadir</button>
+    // Form to add persistent custom actions (not shown in extra attack mode)
+    const addCustomActionForm = isExtraAttack ? '' : `
+        <details class="add-custom-action-details">
+            <summary>✏️ Añadir acción personalizada…</summary>
+            <div class="add-custom-action-form">
+                <input type="text" id="newCustomActionName" class="combat-custom-input" placeholder="Nombre de la acción" autocomplete="off">
+                <select id="newCustomActionTipo" class="combat-custom-input" style="flex:0 0 auto;width:auto">
+                    <option value="accion">Acción</option>
+                    <option value="adicional">Adicional</option>
+                    <option value="reaccion">Reacción</option>
+                </select>
+                <input type="text" id="newCustomActionDado" class="combat-custom-input" placeholder="Dado (ej: 1d6+3)" style="flex:0 0 auto;width:110px">
+                <button onclick="addPermanentCustomAction('${p.id}')">+ Guardar</button>
             </div>
+        </details>`;
+
+    // Invocaciones section for Zero (not shown in extra attack mode)
+    let invocacionesHTML = '';
+    if (!isExtraAttack && p.id === 'Zero' && p.charData?.invocaciones) {
+        const invCards = p.charData.invocaciones.map(inv => `
+            <div class="invocation-card">
+                <div>
+                    <div class="invocation-name">${inv.emoji} ${inv.nombre}</div>
+                    <div class="invocation-stats">HP ${inv.hp} · CA ${inv.ca} · ${inv.velocidad}</div>
+                </div>
+                <div class="invocation-btns">
+                    <button onclick="showInvocationDetail('Zero','${inv.id}')">Ver stats</button>
+                    <button onclick="addInvocationToCombat('Zero','${inv.id}')">+ Al combate</button>
+                </div>
+            </div>`).join('');
+        invocacionesHTML = `<div class="combat-invocations-section">
+            <div class="combat-actions-title">🔮 Invocaciones de Zero</div>
+            ${invCards}
         </div>`;
     }
+
+    actionChipsHTML = `<div class="combat-actions-section">
+        <div class="combat-actions-title">⚡ Acciones del turno</div>
+        ${slotSections}
+        ${addCustomActionForm}
+    </div>${invocacionesHTML}`;
 
     // Recorded actions
     const recordedItems = currentEntry?.actions || [];
@@ -2990,7 +3027,13 @@ function toggleParticipantCondition(id, condId) {
 }
 
 function nextCombatTurn() {
-    if (!isMaster()) return;
+    const p = combatState.participants[combatState.currentIndex];
+    const isPlayersTurn = !isMaster() && gameRole.characterId && p?.id === gameRole.characterId;
+    const isNotMyTurn = !isMaster() && !isPlayersTurn;
+
+    // If player and it's not their own character's turn, just advance silently
+    if (isNotMyTurn) { _doNextTurn(); return; }
+
     const current = getCurrentLogEntry();
     // Extra attack mini-turn: no warning needed, can always pass
     if (combatState.extraAttackTurn) { _doNextTurn(); return; }
@@ -3199,21 +3242,31 @@ function addInvocationToCombat(charId, invId) {
     showNotification(`🔮 ${inv.nombre} añadido al combate`, 2000);
 }
 
-// ---- Quick Enemy Functions ----
-function showQuickEnemyModal(context) {
+// ---- Quick Enemy / Ally Functions ----
+let _quickNpcTipo = 'enemigo'; // module-level flag for current quick-add tipo
+
+function showQuickEnemyModal(context) { showQuickNpcModal(context, 'enemigo'); }
+function showQuickAllyModal(context)  { showQuickNpcModal(context, 'aliado');  }
+
+function showQuickNpcModal(context, tipo) {
+    _quickNpcTipo = tipo;
+    const isEnemy = tipo === 'enemigo';
+    const icon  = isEnemy ? '💀' : '💙';
+    const label = isEnemy ? 'Enemigo' : 'Aliado';
+    const placeholder = isEnemy ? 'Nombre (ej: Goblin)' : 'Nombre (ej: Guardia)';
     document.getElementById('quickEnemyOverlay')?.remove();
     const overlay = document.createElement('div');
     overlay.id = 'quickEnemyOverlay';
     overlay.className = 'combat-resume-overlay';
     overlay.innerHTML = `
         <div class="quick-enemy-modal">
-            <div class="quick-enemy-title">💀 Enemigo Rápido</div>
-            <input id="qeName" class="quick-enemy-input" placeholder="Nombre (ej: Goblin)" autocomplete="off">
+            <div class="quick-enemy-title">${icon} ${label} Rápido</div>
+            <input id="qeName" class="quick-enemy-input" placeholder="${placeholder}" autocomplete="off">
             <input id="qeHp" class="quick-enemy-input" type="number" placeholder="PG máximos" min="1">
             <input id="qeAc" class="quick-enemy-input" type="number" placeholder="Clase de Armadura" min="1">
             ${context === 'combat' ? `<input id="qeInit" class="quick-enemy-input" type="number" placeholder="Iniciativa (opcional)">` : ''}
             <div class="quick-enemy-btns">
-                <button class="btn-combat-primary" onclick="submitQuickEnemy('${context}')">Añadir</button>
+                <button class="btn-combat-primary" onclick="submitQuickNpc('${context}')">Añadir</button>
                 <button class="btn-combat-secondary" onclick="document.getElementById('quickEnemyOverlay')?.remove()">Cancelar</button>
             </div>
         </div>`;
@@ -3221,7 +3274,12 @@ function showQuickEnemyModal(context) {
     document.getElementById('qeName')?.focus();
 }
 
-function submitQuickEnemy(context) {
+function submitQuickEnemy(context) { submitQuickNpc(context); } // backward compat alias
+
+function submitQuickNpc(context) {
+    const tipo = _quickNpcTipo || 'enemigo';
+    const isEnemy = tipo === 'enemigo';
+    const icon = isEnemy ? '💀' : '💙';
     const name = document.getElementById('qeName')?.value?.trim();
     const hp = parseInt(document.getElementById('qeHp')?.value) || 10;
     const ac = parseInt(document.getElementById('qeAc')?.value) || 10;
@@ -3231,8 +3289,8 @@ function submitQuickEnemy(context) {
 
     const uid = `qe_${Date.now()}`;
     const charData = {
-        id: uid, tipo: 'enemigo', nombre: name,
-        clase: 'Enemigo', nivel: '—', imagen: '',
+        id: uid, tipo, nombre: name,
+        clase: isEnemy ? 'Enemigo' : 'Aliado NPC', nivel: '—', imagen: '',
         resumen: { HP: String(hp), CA: String(ac), Velocidad: '30ft' },
         combateExtra: [], conjuros: [],
     };
@@ -3242,7 +3300,7 @@ function submitQuickEnemy(context) {
     if (context === 'setup') {
         combatState.selectedIds.push(uid);
         renderCombatSetup();
-        showNotification(`💀 ${name} añadido a la selección`, 2000);
+        showNotification(`${icon} ${name} añadido a la selección`, 2000);
     } else {
         const participant = {
             id: uid, name,
@@ -3251,13 +3309,14 @@ function submitQuickEnemy(context) {
             ac: String(ac), baseAc: String(ac),
             speed: '30ft', baseSpeed: '30ft',
             conditions: [], note: '', charData,
-            demonicForm: false, tipo: 'enemigo',
+            demonicForm: false, tipo,
+            customActions: [],
         };
         combatState.participants.push(participant);
         combatState.participants.sort((a, b) => (b.initiative || 0) - (a.initiative || 0));
         saveCombatState();
         renderCombatManager();
-        showNotification(`💀 ${name} añadido al combate`, 2000);
+        showNotification(`${icon} ${name} añadido al combate`, 2000);
     }
 }
 
@@ -3289,7 +3348,10 @@ function loadSavedCombatIfAny() {
     try {
         const saved = JSON.parse(raw);
         if (!saved.isActive || !saved.participants?.length) return;
-        saved.participants.forEach(p => { p.charData = window.characterData[p.id] || null; });
+        saved.participants.forEach(p => {
+            p.charData = window.characterData[p.id] || null;
+            if (!p.customActions) p.customActions = []; // migration for old saves
+        });
         Object.assign(combatState, saved);
         showCombatResumePrompt();
     } catch (e) { clearSavedCombat(); }
