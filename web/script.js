@@ -38,6 +38,7 @@ async function init() {
         renderCharacterSelectionMenu();
         setupEventListeners();
         setupDiceRoller();
+        setupCombatOptionsMenu();
         setView('landing');
         updateTaskMd('Initialize');
         initRole();
@@ -933,6 +934,14 @@ function showOnlineCodeModal(joinCode) {
 }
 
 // Render the share link en la barra superior (recordatorio siempre visible)
+function showCurrentSessionCode() {
+    if (activeJoinCode) {
+        showOnlineCodeModal(activeJoinCode);
+    } else {
+        showNotification('No hay código de sesión activo', 2000);
+    }
+}
+
 function renderCombatShareLink() {
     const el = document.getElementById('combatShareLink');
     if (!el || !activeJoinCode) return;
@@ -1392,6 +1401,28 @@ function setupDiceRoller() {
     document.addEventListener('click', (e) => {
         if (!e.target.closest('.dice-roller-widget')) {
             panel.classList.remove('open');
+            toggleBtn.classList.remove('open');
+        }
+    });
+}
+
+// ============================================
+// Combat Options Menu (sandwich ☰)
+// ============================================
+function setupCombatOptionsMenu() {
+    const toggleBtn = document.getElementById('optionsMenuToggle');
+    const menu      = document.getElementById('optionsMenu');
+    if (!toggleBtn || !menu) return;
+
+    toggleBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const isOpen = menu.classList.toggle('open');
+        toggleBtn.classList.toggle('open', isOpen);
+    });
+
+    document.addEventListener('click', (e) => {
+        if (!menu.contains(e.target) && e.target !== toggleBtn) {
+            menu.classList.remove('open');
             toggleBtn.classList.remove('open');
         }
     });
@@ -2944,6 +2975,16 @@ function renderCombatManager() {
 
     const roundEl = document.getElementById('combatRoundBadge');
     if (roundEl) roundEl.textContent = `Ronda ${combatState.round}`;
+
+    // Update current actor name in toolbar
+    const actor = combatState.participants[combatState.currentIndex];
+    const actorNameEl = document.getElementById('combatActorName');
+    if (actorNameEl) actorNameEl.textContent = actor ? `Turno de ${actor.name.split(' ')[0]}` : '';
+
+    // Show "Código de sesión" button only in online mode
+    const sessionCodeBtn = document.getElementById('showSessionCodeBtn');
+    if (sessionCodeBtn) sessionCodeBtn.style.display = isOnlineCombat ? '' : 'none';
+
     renderCombatShareLink();
     renderTurnQueue();
     renderActivePanel();
@@ -4494,7 +4535,7 @@ function setView(viewName) {
             document.getElementById('combatManagerSection').style.display = 'flex';
             if (editorToolbar) editorToolbar.style.display = 'none';
             if (hud) hud.style.display = 'none';
-            if (diceWidget) diceWidget.style.display = 'flex';
+            if (diceWidget) diceWidget.style.display = 'none'; // no floating dice in combat
             break;
         case 'onlineLobby':
             document.getElementById('onlineLobbyView').style.display = 'flex';
