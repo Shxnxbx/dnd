@@ -2686,6 +2686,7 @@ function beginCombatFromSetup() {
     saveCombatState();
     setView('combatManager');
     renderCombatManager();
+    if (isOnlineCombat) startCombatSession(); // solo en modo online: crear sesión en BD
 }
 
 function confirmEndCombat() {
