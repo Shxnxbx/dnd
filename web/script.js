@@ -2680,24 +2680,32 @@ function beginCombatFromSetup() {
 
     // Add setup NPCs
     setupNpcs.forEach(npc => {
-        const uid = npc._uid || `setup_${npc.tipo}_${Date.now()}_${Math.random().toString(36).slice(2, 5)}`;
-        const combateExtra = [
-            ...parseSetupActions(npc.acciones    || '', 'accion'),
-            ...parseSetupActions(npc.adicionales || '', 'adicional'),
-            ...parseSetupActions(npc.reacciones  || '', 'reaccion'),
-        ];
+        const uid     = npc._uid || `setup_${npc.tipo}_${Date.now()}_${Math.random().toString(36).slice(2, 5)}`;
         const isGroup   = !!npc.isGroup;
         const groupSize = isGroup ? (npc.groupSize || 2) : 1;
         const totalHp   = isGroup ? npc.pg * groupSize : npc.pg;
 
-        const charData = {
-            id: uid, tipo: npc.tipo, nombre: npc.nombre,
-            clase: npc.tipo === 'aliado' ? 'Aliado' : 'Enemigo',
-            nivel: '—', imagen: '',
-            resumen: { HP: String(totalHp), CA: String(npc.ca), Velocidad: '30ft' },
-            combateExtra, conjuros: [],
-        };
-        window.characterData[uid] = charData;
+        // Special summons (sirviente, invocaciones) pre-register their charData
+        // in window.characterData; re-use it directly instead of building from text fields.
+        let charData;
+        if (npc._useExistingCharData && window.characterData[uid]) {
+            charData = window.characterData[uid];
+        } else {
+            const combateExtra = [
+                ...parseSetupActions(npc.acciones    || '', 'accion'),
+                ...parseSetupActions(npc.adicionales || '', 'adicional'),
+                ...parseSetupActions(npc.reacciones  || '', 'reaccion'),
+            ];
+            charData = {
+                id: uid, tipo: npc.tipo, nombre: npc.nombre,
+                clase: npc.tipo === 'aliado' ? 'Aliado' : 'Enemigo',
+                nivel: '—', imagen: '',
+                resumen: { HP: String(totalHp), CA: String(npc.ca), Velocidad: '30ft' },
+                combateExtra, conjuros: [],
+            };
+            window.characterData[uid] = charData;
+        }
+
         participants.push({
             id: uid, name: npc.nombre,
             initiative: npc.initiative,
@@ -2716,6 +2724,8 @@ function beginCombatFromSetup() {
             isSummon:             !!npc.isSummon,
             summoner:             npc.summoner || '',
             summonedBeforeCombat: !!npc.summonedBeforeCombat,
+            // Special flags (sirviente invisible)
+            ...(npc._isSirvienteInvisible ? { _isSirvienteInvisible: true } : {}),
         });
     });
 
@@ -2946,6 +2956,7 @@ function renderCombatSetup() {
               aliados.map(renderCombatSetupCard).join('')
             : '';
     }
+    renderSpecialSummonsSection();
     const enemigoGrid = document.getElementById('enemigoExistingGrid');
     if (enemigoGrid) {
         const enemigos = chars.filter(c => c.tipo === 'enemigo');
@@ -2964,6 +2975,194 @@ function toggleCombatParticipant(charId) {
     if (idx >= 0) combatState.selectedIds.splice(idx, 1);
     else combatState.selectedIds.push(charId);
     renderCombatSetup();
+}
+
+// ── Special Summons Section (Setup screen — Aliados tab) ──────────────────────
+// Renders the Sirviente Invisible (if Vel selected) and Zero's invocaciones
+// (if Zero selected) as selectable cards above the NPC list.
+
+function _buildInvocacionActions(inv) {
+    const atkStr  = inv.ataque || '';
+    const atkMatch  = atkStr.match(/([+-]\d+)/);
+    const dadoMatch = atkStr.match(/\(([^)]+)\)/);
+    return [{
+        nombre: inv.nombre,
+        tipo:   'accion',
+        atk:    atkMatch  ? atkMatch[1]  : '',
+        dado:   dadoMatch ? dadoMatch[1] : atkStr,
+        desc:   (inv.habilidades || []).join(' / '),
+    }];
+}
+
+function renderSpecialSummonsSection() {
+    const el = document.getElementById('specialSummonsSection');
+    if (!el) return;
+
+    const velSelected  = combatState.selectedIds.includes('Vel');
+    const zeroSelected = combatState.selectedIds.includes('Zero');
+    if (!velSelected && !zeroSelected) { el.innerHTML = ''; return; }
+
+    const hasZeroSummon = setupNpcs.some(n => n.isSummon && n.summoner === 'ZERO');
+    const hasSirviente  = setupNpcs.some(n => n.isSummon && n.summoner === 'ASTHOR');
+
+    let cards = '';
+
+    // ── Sirviente Invisible (Vel) ─────────────────────────────────────────────
+    if (velSelected) {
+        const velAc = parseInt(window.characterData['Vel']?.resumen?.CA) || 16;
+        if (hasSirviente) {
+            cards += `
+            <div class="special-summon-card summon-card-done">
+                <div class="ssc-header">
+                    <span class="ssc-emoji">👻</span>
+                    <div class="ssc-info">
+                        <div class="ssc-name">Sirviente Invisible</div>
+                        <div class="ssc-stats">PG 1 · CA ${velAc} · Familiar de Vel</div>
+                    </div>
+                </div>
+                <span class="ssc-badge">✓ Añadido</span>
+            </div>`;
+        } else {
+            cards += `
+            <div class="special-summon-card">
+                <div class="ssc-header">
+                    <span class="ssc-emoji">👻</span>
+                    <div class="ssc-info">
+                        <div class="ssc-name">Sirviente Invisible</div>
+                        <div class="ssc-stats">PG 1 · CA ${velAc} · Familiar de Vel</div>
+                        <div class="ssc-atq">⚔️ Hacha de mano +7/1d8+5 · Daga +7/1d4</div>
+                    </div>
+                </div>
+                <div class="ssc-footer">
+                    <input type="number" id="sirvienteInit" class="npc-input npc-input-sm"
+                           value="0" style="width:64px" placeholder="Init">
+                    <button class="btn-combat-secondary ssc-add-btn"
+                            onclick="addSpecialSummonToSetup('sirviente', null)">+ Añadir</button>
+                </div>
+            </div>`;
+        }
+    }
+
+    // ── Zero's invocaciones ───────────────────────────────────────────────────
+    if (zeroSelected) {
+        const invocaciones = window.characterData['Zero']?.invocaciones || [];
+        invocaciones.forEach(inv => {
+            const thisAdded = setupNpcs.some(n => n.isSummon && n.summoner === 'ZERO' && n._invId === inv.id);
+            if (thisAdded) {
+                cards += `
+                <div class="special-summon-card summon-card-done">
+                    <div class="ssc-header">
+                        <span class="ssc-emoji">${inv.emoji}</span>
+                        <div class="ssc-info">
+                            <div class="ssc-name">${inv.nombre}</div>
+                            <div class="ssc-stats">PG ${inv.hp} · CA ${inv.ca} · ${inv.velocidad}</div>
+                            <div class="ssc-atq">⚔️ ${inv.ataque}</div>
+                        </div>
+                    </div>
+                    <span class="ssc-badge">✓ Añadido</span>
+                </div>`;
+            } else if (hasZeroSummon) {
+                cards += `
+                <div class="special-summon-card summon-card-locked">
+                    <div class="ssc-header">
+                        <span class="ssc-emoji">${inv.emoji}</span>
+                        <div class="ssc-info">
+                            <div class="ssc-name">${inv.nombre}</div>
+                            <div class="ssc-stats">PG ${inv.hp} · CA ${inv.ca} · ${inv.velocidad}</div>
+                            <div class="ssc-atq">⚔️ ${inv.ataque}</div>
+                        </div>
+                    </div>
+                    <span class="ssc-badge ssc-badge-locked">🔒 Ocupado</span>
+                </div>`;
+            } else {
+                cards += `
+                <div class="special-summon-card">
+                    <div class="ssc-header">
+                        <span class="ssc-emoji">${inv.emoji}</span>
+                        <div class="ssc-info">
+                            <div class="ssc-name">${inv.nombre}</div>
+                            <div class="ssc-stats">PG ${inv.hp} · CA ${inv.ca} · ${inv.velocidad}</div>
+                            <div class="ssc-atq">⚔️ ${inv.ataque}</div>
+                        </div>
+                    </div>
+                    <div class="ssc-footer">
+                        <input type="number" id="inv_init_${inv.id}" class="npc-input npc-input-sm"
+                               value="0" style="width:64px" placeholder="Init">
+                        <button class="btn-combat-secondary ssc-add-btn"
+                                onclick="addSpecialSummonToSetup('invocacion', '${inv.id}')">+ Añadir</button>
+                    </div>
+                </div>`;
+            }
+        });
+    }
+
+    el.innerHTML = `
+    <div class="special-summons-section">
+        <div class="npc-existing-label">✨ Invocaciones especiales</div>
+        <div class="special-summons-grid">${cards}</div>
+    </div>`;
+}
+
+function addSpecialSummonToSetup(type, invId) {
+    if (type === 'sirviente') {
+        if (setupNpcs.some(n => n.isSummon && n.summoner === 'ASTHOR')) {
+            showNotification('El Sirviente ya está añadido', 2000);
+            return;
+        }
+        const velAc     = parseInt(window.characterData['Vel']?.resumen?.CA) || 16;
+        const initiative = parseInt(document.getElementById('sirvienteInit')?.value) || 0;
+        const uid       = 'sirviente_invisible_vel';
+        const charData  = buildSirvienteCharData(velAc);
+        // Register with full charData so beginCombatFromSetup uses pre-built actions
+        window.characterData[uid] = {
+            ...charData,
+            id:     uid,
+            resumen: { HP: '1', CA: String(velAc), Velocidad: '30ft' },
+        };
+        setupNpcs.push({
+            tipo: 'aliado', nombre: 'Sirviente Invisible',
+            pg: 1, ca: velAc, initiative,
+            acciones: '', adicionales: '', reacciones: '',
+            isGroup: false, groupSize: 1,
+            isSummon: true, summoner: 'ASTHOR', summonedBeforeCombat: true,
+            _uid: uid,
+            _useExistingCharData: true,
+            _isSirvienteInvisible: true,
+        });
+
+    } else if (type === 'invocacion') {
+        if (setupNpcs.some(n => n.isSummon && n.summoner === 'ZERO')) {
+            showNotification('⚠️ Zero ya tiene una invocación activa', 2500);
+            return;
+        }
+        const inv = window.characterData['Zero']?.invocaciones?.find(i => i.id === invId);
+        if (!inv) return;
+        const initiative = parseInt(document.getElementById(`inv_init_${invId}`)?.value) || 0;
+        const uid        = `invocacion_zero_${invId}`;
+        const combateExtra = _buildInvocacionActions(inv);
+        const charData = {
+            id: uid, tipo: 'aliado', nombre: inv.nombre,
+            clase: 'Invocación de Zero', nivel: '—', imagen: null,
+            resumen: { HP: String(inv.hp), CA: String(inv.ca), Velocidad: inv.velocidad },
+            combateExtra, conjuros: [],
+        };
+        window.characterData[uid] = charData;
+        setupNpcs.push({
+            tipo: 'aliado', nombre: inv.nombre,
+            pg: inv.hp, ca: inv.ca, initiative,
+            acciones: '', adicionales: '', reacciones: '',
+            isGroup: false, groupSize: 1,
+            isSummon: true, summoner: 'ZERO', summonedBeforeCombat: true,
+            _uid: uid,
+            _useExistingCharData: true,
+            _invId: invId,
+        });
+    }
+
+    renderSetupNpcList('aliado');
+    renderSpecialSummonsSection();
+    _updateSetupCount();
+    showNotification('💙 Invocación añadida', 2000);
 }
 
 function setSetupJugadorInitiative(charId, value) {
@@ -4848,6 +5047,7 @@ function removeSetupNpc(idx) {
     setupNpcs.splice(idx, 1);
     renderSetupNpcList('aliado');
     renderSetupNpcList('enemigo');
+    renderSpecialSummonsSection(); // refresh so removed summons become selectable again
     _updateSetupCount();
     showNotification(`✕ ${name} eliminado`, 1200);
 }

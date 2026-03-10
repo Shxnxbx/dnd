@@ -5592,3 +5592,99 @@ body.role-jugador .master-only { display: none !important; }
 }
 /* Ensure the combat toolbar stacks above the body content */
 .combat-toolbar { position: relative; z-index: 100; }
+
+/* ── Special Summon Cards (Setup — Aliados tab) ─────────────────────────────── */
+.special-summons-section {
+    margin: 0 0 16px;
+}
+.special-summons-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 4px 0;
+}
+.special-summon-card {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    background: rgba(139, 111, 255, 0.06);
+    border: 1px solid rgba(139, 111, 255, 0.28);
+    border-radius: 12px;
+    padding: 12px 14px;
+    min-width: 200px;
+    max-width: 280px;
+    flex: 1;
+    transition: border-color 0.2s;
+}
+.special-summon-card:hover:not(.summon-card-done):not(.summon-card-locked) {
+    border-color: rgba(139, 111, 255, 0.55);
+}
+.ssc-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+}
+.ssc-emoji {
+    font-size: 22px;
+    flex-shrink: 0;
+    line-height: 1;
+}
+.ssc-info {
+    flex: 1;
+    min-width: 0;
+}
+.ssc-name {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.ssc-stats {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 2px;
+}
+.ssc-atq {
+    font-size: 11px;
+    color: #c0a8ff;
+    margin-top: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.ssc-footer {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 2px;
+}
+.ssc-add-btn {
+    flex: 1;
+    font-size: 12px;
+    padding: 6px 10px;
+}
+.ssc-badge {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 9px;
+    border-radius: 20px;
+    align-self: flex-start;
+}
+.summon-card-done {
+    border-color: rgba(68, 220, 68, 0.28);
+    background: rgba(68, 220, 68, 0.05);
+}
+.summon-card-done .ssc-badge {
+    color: #66dd66;
+    background: rgba(68, 220, 68, 0.12);
+}
+.summon-card-locked {
+    opacity: 0.5;
+    pointer-events: none;
+}
+.ssc-badge-locked {
+    color: var(--text-muted);
+    background: rgba(255, 255, 255, 0.07);
+}
