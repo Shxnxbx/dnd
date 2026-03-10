@@ -13,8 +13,8 @@
         href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Inter:wght@300;400;500;600;700&display=swap"
         rel="stylesheet">
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
-    <link rel="stylesheet" href="style.css?v=20260310j">
-    <link rel="stylesheet" href="mobile.css?v=20260310j" media="screen and (max-width: 768px)">
+    <link rel="stylesheet" href="style.css?v=20260310k">
+    <link rel="stylesheet" href="mobile.css?v=20260310k" media="screen and (max-width: 768px)">
 </head>
 
 <body>
@@ -219,14 +219,35 @@
 
         <!-- Master layout (hidden in player mode) -->
         <div id="combatMasterLayout" class="combat-master-layout">
-            <!-- Top bar: Round badge + Turn Queue + End button -->
-            <div class="combat-top-bar">
-                <div class="combat-round-badge" id="combatRoundBadge">Ronda 1</div>
-                <div id="combatShareLink" class="combat-share-link" style="display:none"></div>
+
+            <!-- Row 1: Initiative bar — protagonist, full width -->
+            <div class="combat-initiative-bar">
                 <div class="combat-turn-queue" id="combatTurnQueue">
                     <!-- Dynamic: one card per participant ordered by initiative -->
                 </div>
-                <button class="btn-end-combat" onclick="confirmEndCombat()">✕ Fin</button>
+            </div>
+
+            <!-- Row 2: Toolbar — Ronda | Anterior/Siguiente | Actor | ☰ -->
+            <div class="combat-toolbar">
+                <div class="combat-round-info" id="combatRoundBadge">Ronda 1</div>
+
+                <div class="combat-turn-controls">
+                    <button class="btn-tc-secondary" onclick="previousCombatTurn()" title="Volver al turno anterior">← Anterior</button>
+                    <button class="btn-tc-primary" onclick="nextCombatTurn()">Siguiente →</button>
+                    <button class="btn-tc-secondary combat-log-mobile-btn" onclick="toggleMobileLog()" style="display:none" title="Ver registro">📋</button>
+                </div>
+
+                <div class="combat-actor-info" id="combatActorName"></div>
+
+                <div class="combat-options-menu">
+                    <button class="options-toggle" id="optionsMenuToggle" title="Opciones">☰</button>
+                    <div class="options-dropdown" id="optionsMenu">
+                        <button onclick="confirmEndCombat();document.getElementById('optionsMenu').classList.remove('open');document.getElementById('optionsMenuToggle').classList.remove('open')">✕ Fin de combate</button>
+                        <button id="showSessionCodeBtn" onclick="showCurrentSessionCode();document.getElementById('optionsMenu').classList.remove('open');document.getElementById('optionsMenuToggle').classList.remove('open')" style="display:none">🌐 Código de sesión</button>
+                        <button onclick="showQuickEnemyModal('combat');document.getElementById('optionsMenu').classList.remove('open');document.getElementById('optionsMenuToggle').classList.remove('open')">💀 Añadir enemigo</button>
+                        <button onclick="showQuickAllyModal('combat');document.getElementById('optionsMenu').classList.remove('open');document.getElementById('optionsMenuToggle').classList.remove('open')">💙 Añadir aliado</button>
+                    </div>
+                </div>
             </div>
 
             <!-- Main body: Active panel + Combat Log -->
@@ -240,15 +261,6 @@
                         <!-- Dynamic: turn log entries, newest at top -->
                     </div>
                 </div>
-            </div>
-
-            <!-- Bottom controls -->
-            <div class="combat-bottom-bar">
-                <button class="btn-combat-secondary master-only" onclick="showQuickEnemyModal('combat')" style="font-size:12px">💀 +Enemigo</button>
-                <button class="btn-combat-secondary master-only" onclick="showQuickAllyModal('combat')" style="font-size:12px">💙 +Aliado</button>
-                <button class="btn-combat-secondary master-only" onclick="previousCombatTurn()" title="Volver al turno anterior">← Anterior</button>
-                <button class="btn-combat-primary btn-next-turn" onclick="nextCombatTurn()">Siguiente Turno →</button>
-                <button class="btn-combat-secondary combat-log-mobile-btn" onclick="toggleMobileLog()" style="display:none" title="Ver registro">📋 Log</button>
             </div>
         </div>
 
@@ -429,9 +441,9 @@
         <button id="diceToggleBtn" class="dice-toggle-btn" title="Lanzador de dados" aria-label="Abrir lanzador de dados">🎲</button>
     </div>
 
-    <script src="characters.js?v=20260310j"></script>
-    <script src="data.js?v=20260310j"></script>
-    <script src="script.js?v=20260310j"></script>
+    <script src="characters.js?v=20260310k"></script>
+    <script src="data.js?v=20260310k"></script>
+    <script src="script.js?v=20260310k"></script>
 </body>
 
 </html>

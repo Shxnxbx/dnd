@@ -2822,6 +2822,22 @@ body.view-map .hud {
 }
 
 /* Top bar */
+/* ── Initiative bar (Row 1 — protagonist, full width) ── */
+.combat-initiative-bar {
+    display: flex;
+    align-items: center;
+    padding: 10px 14px;
+    background: rgba(10, 14, 23, 0.98);
+    border-bottom: 2px solid var(--accent-gold);
+    box-shadow: 0 3px 14px rgba(0,0,0,0.45);
+    flex-shrink: 0;
+    min-height: 82px;
+}
+.combat-initiative-bar .combat-turn-queue {
+    padding: 6px 0;
+}
+
+/* keep legacy .combat-top-bar stub so nothing else breaks */
 .combat-top-bar {
     display: flex;
     align-items: center;
@@ -2861,12 +2877,12 @@ body.view-map .hud {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 3px;
-    padding: 6px 10px;
+    gap: 4px;
+    padding: 8px 12px;
     border-radius: 10px;
     border: 2px solid transparent;
     cursor: pointer;
-    min-width: 76px;
+    min-width: 82px;
     background: rgba(255,255,255,0.03);
     transition: border-color 0.15s;
 }
@@ -3280,6 +3296,130 @@ body.view-map .hud {
 }
 
 /* Bottom bar */
+/* ── Combat Toolbar (Row 2 — round / controls / actor / menu) ── */
+.combat-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 7px 14px;
+    background: rgba(15, 20, 32, 0.97);
+    border-bottom: 1px solid var(--border-color);
+    flex-shrink: 0;
+    min-height: 50px;
+}
+
+.combat-round-info {
+    font-family: var(--font-heading);
+    font-size: 13px;
+    color: var(--accent-gold);
+    background: rgba(212, 175, 55, 0.1);
+    border: 1px solid var(--accent-gold);
+    border-radius: 8px;
+    padding: 5px 12px;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.combat-turn-controls {
+    display: flex;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.btn-tc-primary {
+    background: linear-gradient(135deg, var(--accent-gold), #9a7a20);
+    color: var(--bg-primary);
+    border: none;
+    border-radius: 6px;
+    padding: 6px 16px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: opacity 0.15s;
+    white-space: nowrap;
+}
+.btn-tc-primary:hover { opacity: 0.85; }
+
+.btn-tc-secondary {
+    background: rgba(255,255,255,0.05);
+    color: var(--text-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: background 0.15s;
+    white-space: nowrap;
+}
+.btn-tc-secondary:hover { background: rgba(255,255,255,0.1); }
+
+.combat-actor-info {
+    flex: 1;
+    font-size: 13px;
+    color: var(--text-muted);
+    font-style: italic;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* ── Sandwich / Options Menu ── */
+.combat-options-menu {
+    position: relative;
+    flex-shrink: 0;
+}
+
+.options-toggle {
+    background: rgba(255,255,255,0.06);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 5px 11px;
+    font-size: 18px;
+    line-height: 1;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+}
+.options-toggle:hover { background: rgba(255,255,255,0.13); }
+.options-toggle.open {
+    background: rgba(212,175,55,0.12);
+    border-color: var(--accent-gold);
+    color: var(--accent-gold);
+}
+
+.options-dropdown {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 6px);
+    background: #1a1e2e;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    display: none;
+    flex-direction: column;
+    min-width: 210px;
+    z-index: 300;
+    box-shadow: 0 8px 28px rgba(0,0,0,0.55);
+    overflow: hidden;
+}
+.options-dropdown.open { display: flex; }
+
+.options-dropdown button {
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    color: var(--text-primary);
+    text-align: left;
+    padding: 11px 16px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background 0.12s;
+}
+.options-dropdown button:last-child { border-bottom: none; }
+.options-dropdown button:hover { background: rgba(255,255,255,0.08); }
+.options-dropdown button:first-child:hover { background: rgba(220,50,50,0.15); color: #ff8080; }
+
+/* ── Legacy bottom bar (kept for backward compat, no longer rendered in master layout) ── */
 .combat-bottom-bar {
     display: flex;
     justify-content: flex-end;
@@ -3293,6 +3433,16 @@ body.view-map .hud {
 .btn-next-turn {
     font-size: 15px;
     padding: 12px 28px;
+}
+
+/* Mobile: toolbar adaptations */
+@media (max-width: 600px) {
+    .combat-initiative-bar { min-height: 70px; padding: 8px 10px; }
+    .combat-toolbar { gap: 6px; padding: 6px 10px; }
+    .combat-actor-info { display: none; }
+    .combat-round-info { font-size: 12px; padding: 4px 8px; }
+    .btn-tc-primary, .btn-tc-secondary { padding: 5px 10px; font-size: 12px; }
+    .combat-log-mobile-btn { display: inline-flex !important; }
 }
 
 /* Mobile: stack body vertically */
