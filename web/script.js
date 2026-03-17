@@ -717,30 +717,48 @@ let sseSource      = null;
 let _saveTimer     = null;
 let isOnlineCombat = false; // true solo en modo Combate en Línea
 
-// Debounced PUT to API — called after every saveCombatState()
+// Build the body for an API save (shared between debounced and immediate paths)
+function _buildSaveBody() {
+    return {
+        participants:      combatState.participants.map(p => ({ ...p, charData: null })),
+        currentIndex:      combatState.currentIndex,
+        round:             combatState.round,
+        isActive:          combatState.isActive,
+        segundaAccionTurn: combatState.segundaAccionTurn,
+        extraAttackTurn:   combatState.extraAttackTurn,
+        nextLogId:         combatState.nextLogId,
+        log:               combatState.log,
+        _clientId:         CLIENT_ID,
+    };
+}
+
+// Debounced PUT to API — called after most saveCombatState() calls
 function saveToApi() {
     if (!activeCombatId || !combatState.isActive) return;
     clearTimeout(_saveTimer);
     _saveTimer = setTimeout(async () => {
         try {
-            const body = {
-                participants:      combatState.participants.map(p => ({ ...p, charData: null })),
-                currentIndex:      combatState.currentIndex,
-                round:             combatState.round,
-                isActive:          combatState.isActive,
-                segundaAccionTurn: combatState.segundaAccionTurn,
-                extraAttackTurn:   combatState.extraAttackTurn,
-                nextLogId:         combatState.nextLogId,
-                log:               combatState.log,
-                _clientId:         CLIENT_ID,
-            };
             await fetch(`${API_BASE}/api/combats/${activeCombatId}`, {
                 method:  'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body:    JSON.stringify(body),
+                body:    JSON.stringify(_buildSaveBody()),
             });
         } catch (e) { console.warn('[sync] PUT failed:', e.message); }
     }, 800);
+}
+
+// Immediate PUT to API — used for navigation actions (Anterior) where an 800ms
+// debounce window could allow a stale SSE message to overwrite the local state
+// before the PUT fires, causing desync on other devices.
+function saveToApiNow() {
+    if (!activeCombatId || !combatState.isActive) return;
+    clearTimeout(_saveTimer); // cancel any pending debounced save
+    _saveTimer = null;
+    fetch(`${API_BASE}/api/combats/${activeCombatId}`, {
+        method:  'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify(_buildSaveBody()),
+    }).catch(e => console.warn('[sync] immediate PUT failed:', e.message));
 }
 
 // Re-attach charData after receiving remote state (charData is stripped before saving)
@@ -4463,7 +4481,9 @@ function previousCombatTurn() {
             }
         });
     }
-    saveCombatState();
+    // Online: bypass debounce so remote devices see the turn change immediately.
+    // A debounced save risks being overwritten by a stale SSE echo before the PUT fires.
+    saveCombatState({ immediate: isOnlineCombat });
     renderCombatManager();
     showNotification('⬅️ Turno anterior restaurado', 2000);
 }
@@ -5055,14 +5075,17 @@ function removeSetupNpc(idx) {
 // ---- Auto-save Combat State ----
 const COMBAT_SAVE_KEY = 'dnd_combat_session';
 
-function saveCombatState() {
+// opts.immediate — bypass debounce and fire PUT synchronously (used by previousCombatTurn)
+function saveCombatState(opts = {}) {
     if (!combatState.isActive) return;
     const toSave = {
         ...combatState,
         participants: combatState.participants.map(p => ({ ...p, charData: null })),
     };
     try { localStorage.setItem(COMBAT_SAVE_KEY, JSON.stringify(toSave)); } catch (e) {}
-    if (isOnlineCombat) saveToApi(); // solo en modo online
+    if (isOnlineCombat) {
+        if (opts.immediate) saveToApiNow(); else saveToApi();
+    }
 }
 
 function clearSavedCombat() {
